@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\DataCollectorConnect.Models\DataCollectorConnect.Models.csproj" />
+	<ProjectReference Include="..\..\..\..\TiaPortalExporter\Siemens.HMI\Siemens.HMI.csproj" />	  
   </ItemGroup>
 
 </Project>

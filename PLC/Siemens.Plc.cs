@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DataCollectorConnect.Models.Base;
-using DataCollectorConnect.Models.PlcDriver;
-
+using Siemens.HMI;
 
 namespace Siemens.PLC
 {
@@ -47,7 +46,7 @@ namespace Siemens.PLC
         public List<SiemensPlcSubnet> PlcNetwork { get; set; }
         public List<SiemensPlcSignal> Signals { get; set; }
         public List<SiemensPlcMetadata> Metadatas { get; set; }
-        public List<EventDTO> Events { get; set; }
-        public List<PlcHmi> Hmi { get; set; }
+        public List<SiemensPlcEvent> Events { get; set; }
+        public List<SiemensHmi> Hmi { get; set; }
     }
 }
