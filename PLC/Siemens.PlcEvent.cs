@@ -18,7 +18,7 @@ namespace Siemens.PLC
         public string TriggerStart { get; set; }
         public string TriggerEnd { get; set; }
         public Metadata Metadata { get; set; }
-        public List<EventTranslation> Translations { get; set; }
+        public List<DataCollectorConnect.Models.Base.EventTranslation> Translations { get; set; }
     }
 
     public class Metadata
@@ -34,7 +34,7 @@ namespace Siemens.PLC
         public string ImportFileName { get; set; }
     }
 
-    public class EventTranslation
+    public class SiemensEventTranslation
     {
         public string Name { get; set; }
         public string Description { get; set; }
