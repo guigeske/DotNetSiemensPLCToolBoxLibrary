@@ -42,17 +42,7 @@ namespace Siemens.PLC
         public static void PrintNodeData(SiemensPlcNode node)
         {
             logger.Info(
-                "Node: "
-                    + node.Id
-                    + ":"
-                    + node.Name
-                    + " - "
-                    + "Subnet:"
-                    + node.Subnet
-                    + " - "
-                    + node.Type
-                    + ":"
-                    + node.Address
+                $"Node: {node.Id}:{node.Name} - Subnet: {node.Subnet} - {node.Type}:{node.Address}"
             );
         }
     }
