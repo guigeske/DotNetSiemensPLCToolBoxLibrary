@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using DataCollectorConnect.Models.Base;
 using DataCollectorConnect.Models.PlcDriver;
 
-
 namespace Siemens.PLC
 {
     public class SiemensPlc
