@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DataCollectorConnect.Models.Base;
+using DataCollectorConnect.Models.PlcDriver;
 using Siemens.HMI;
 
 namespace Siemens.PLC
 {
-    public class SiemensPlc
+    public class SiemensPlc : Plc
     {
         public SiemensPlc() { }
 
@@ -104,7 +105,7 @@ namespace Siemens.PLC
             {
                 // Create a new SiemensPlcEvent instance using data from hmiEvent
                 SiemensPlcEvent plcEvent = new SiemensPlcEvent(
-                    hmiEvent.Ip,
+                    hmiEvent.PlcIp,
                     hmiEvent.Type,
                     hmiEvent.ProductionEntity,
                     hmiEvent.TriggerStart,
