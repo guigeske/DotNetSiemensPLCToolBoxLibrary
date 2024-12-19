@@ -14,7 +14,7 @@ using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using DotNetSiemensPLCToolBoxLibrary.General;
 using DotNetSiemensPLCToolBoxLibrary.Projectfiles.TIA.Openness;
 using NLog;
-using Siemens.PLC;
+using DataCollectorConnect.Models.Standard;
 using Siemens.Engineering;
 using Siemens.Engineering.Compiler;
 using Siemens.Engineering.HmiUnified.HmiTags;

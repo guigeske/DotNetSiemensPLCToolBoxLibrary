@@ -17,7 +17,7 @@ using Siemens.Engineering.SW.Types;
 using Siemens.Engineering.SW.Tags;
 using DotNetSiemensPLCToolBoxLibrary.General;
 using System.Text.RegularExpressions;
-using Siemens.PLC;
+using DataCollectorConnect.Models.Standard;
 using NLog;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V14SP1
