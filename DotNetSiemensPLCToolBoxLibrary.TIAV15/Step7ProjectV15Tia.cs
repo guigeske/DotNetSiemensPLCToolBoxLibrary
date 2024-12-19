@@ -13,6 +13,7 @@ using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using DotNetSiemensPLCToolBoxLibrary.General;
 using NLog;
 using DataCollectorConnect.Models.Standard;
+using DataCollectorConnect.Models.Standard.Siemens;
 using Siemens.Engineering;
 using Siemens.Engineering.HW;
 using Siemens.Engineering.HW.Features;
