@@ -5,6 +5,8 @@ using System.Linq;
 using System.Security;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using DataCollectorConnect.Models.Standard;
+using DataCollectorConnect.Models.Standard.Siemens;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V11;
@@ -12,8 +14,6 @@ using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using DotNetSiemensPLCToolBoxLibrary.General;
 using NLog;
-using DataCollectorConnect.Models.Standard;
-using DataCollectorConnect.Models.Standard.Siemens;
 using Siemens.Engineering;
 using Siemens.Engineering.HW;
 using Siemens.Engineering.HW.Features;
@@ -456,7 +456,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
             }
 
             /// <summary>
-            /// Retrieves data related to the PLC from the TIA project instance, populates the provided <paramref name="plc"/> object with relevant information, 
+            /// Retrieves data related to the PLC from the TIA project instance, populates the provided <paramref name="plc"/> object with relevant information,
             /// and returns the populated PLC object for export or further processing.
             /// </summary>
             /// <param name="plc">The PLC object to populate with data from the TIA project instance.</param>
@@ -493,7 +493,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
                             {
                                 SiemensPlcSubnet plcSubnet = new SiemensPlcSubnet();
                                 plcSubnet.PlcNodes = new List<SiemensPlcNode>();
-                                plcSubnet.Interface = item.Name + ":" + GetPlcAttribute(item, "InterfaceType");
+                                plcSubnet.Interface =
+                                    item.Name + ":" + GetPlcAttribute(item, "InterfaceType");
 
                                 foreach (Node node in nwService.Nodes)
                                 {
@@ -533,10 +534,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
             /// <param name="plcSubnet">The PLC subnet to update with connected node details.</param>
             /// <remarks>
             /// This method checks if the node's address is valid and updates the PLC address.
-            /// If the node is connected to a subnet, a new <see cref="SiemensPlcNode"/> is created 
+            /// If the node is connected to a subnet, a new <see cref="SiemensPlcNode"/> is created
             /// and added to the subnet's node list. Logs and debug information are generated for traceability.
             /// </remarks>
-            private void GetPlcIpAddress(SiemensPlc plc, DeviceItem item, Node node, SiemensPlcSubnet plcSubnet)
+            private void GetPlcIpAddress(
+                SiemensPlc plc,
+                DeviceItem item,
+                Node node,
+                SiemensPlcSubnet plcSubnet
+            )
             {
                 object nodeAddress = ((IEngineeringObject)node).GetAttribute("Address");
                 string address = nodeAddress?.ToString();
@@ -544,35 +550,32 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
                 bool isEthernet = interfaceParts.Length > 1 && interfaceParts[1] == "Ethernet";
 
                 // Validate the address and check conditions
-                if (!string.IsNullOrEmpty(address) && address != "Not Valid" && node.ConnectedSubnet != null
-                    && (item.Items.Count > 1 || isEthernet))
+                if (
+                    !string.IsNullOrEmpty(address)
+                    && address != "Not Valid"
+                    && node.ConnectedSubnet != null
+                    && (item.Items.Count > 1 || isEthernet)
+                )
                 {
-
                     // Assign the address to the PLC
                     plc.Address = address;
 
                     // Add node to the subnet if connected
                     if (node.ConnectedSubnet != null)
                     {
-                        plcSubnet.PlcNodes.Add(new SiemensPlcNode(
-                            node.NodeId,
-                            node.Name,
-                            node.ConnectedSubnet.Name,
-                            node.NodeType.ToString(),
-                            address
-                        ));
+                        plcSubnet.PlcNodes.Add(
+                            new SiemensPlcNode(
+                                node.NodeId,
+                                node.Name,
+                                node.ConnectedSubnet.Name,
+                                node.NodeType.ToString(),
+                                address
+                            )
+                        );
                     }
 
-                    logger.Info(
-                    "Communication Device: "
-                        + item.Name
-                        + " - "
-                        + plcSubnet.Interface
-                );
-                    SiemensPlcNode.PrintNodeData(
-                        plcSubnet.PlcNodes[plcSubnet.PlcNodes.Count - 1]
-                    );
-
+                    logger.Info("Communication Device: " + item.Name + " - " + plcSubnet.Interface);
+                    SiemensPlcNode.PrintNodeData(plcSubnet.PlcNodes[plcSubnet.PlcNodes.Count - 1]);
                 }
             }
 
@@ -911,54 +914,51 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
 
             foreach (var d in tiapProject.Devices)
             {
-                if (d.TypeIdentifier != null && d.TypeIdentifier.EndsWith(".S71500"))
+                foreach (DeviceItem deviceItem in d.DeviceItems)
                 {
-                    foreach (DeviceItem deviceItem in d.DeviceItems)
+                    var target = (
+                        (IEngineeringServiceProvider)deviceItem
+                    ).GetService<SoftwareContainer>();
+                    if (target != null && target.Software is PlcSoftware)
                     {
-                        var target = (
-                            (IEngineeringServiceProvider)deviceItem
-                        ).GetService<SoftwareContainer>();
-                        if (target != null && target.Software is PlcSoftware)
+                        var software = (PlcSoftware)target.Software;
+                        var fld = new TIAOpennessControllerFolder(this, software)
                         {
-                            var software = (PlcSoftware)target.Software;
-                            var fld = new TIAOpennessControllerFolder(this, software)
-                            {
-                                Name = software.Name,
-                                //TiaPortalItem = software,
-                                //Comment = d.Comment != null ? d.Comment.GetText(CultureInfo.CurrentCulture) : null
-                            };
-                            main.SubItems.Add(fld);
+                            Name = software.Name,
+                            //TiaPortalItem = software,
+                            //Comment = d.Comment != null ? d.Comment.GetText(CultureInfo.CurrentCulture) : null
+                        };
+                        main.SubItems.Add(fld);
 
-                            LoadControlerFolderViaOpennessDlls(fld, software);
-                        }
+                        LoadControlerFolderViaOpennessDlls(fld, software);
                     }
-
-                    //var controller = d.DeviceItems.OfType<Siemens.Engineering.HW.ControllerTarget>().FirstOrDefault();
-                    //if (controller == null)
-                    //{
-                    //    var fld = new TIAOpennessProjectFolder(this)
-                    //    {
-                    //        Name = d.Name,
-                    //        TiaPortalItem = d,
-                    //        Comment = d.Comment != null ? d.Comment.GetText(CultureInfo.CurrentCulture) : null
-                    //    };
-                    //    main.SubItems.Add(fld);
-
-                    //    //LoadSubDevicesViaOpennessDlls(fld, d);
-                    //}
-                    //else
-                    //{
-                    //    var fld = new TIAOpennessControllerFolder(this)
-                    //    {
-                    //        Name = d.Name,
-                    //        TiaPortalItem = d,
-                    //        Comment = d.Comment != null ? d.Comment.GetText(CultureInfo.CurrentCulture) : null
-                    //    };
-                    //    main.SubItems.Add(fld);
-
-                    //    //LoadControlerFolderViaOpennessDlls(fld, controller);
-                    //}
                 }
+
+                //var controller = d.DeviceItems.OfType<Siemens.Engineering.HW.ControllerTarget>().FirstOrDefault();
+                //if (controller == null)
+                //{
+                //    var fld = new TIAOpennessProjectFolder(this)
+                //    {
+                //        Name = d.Name,
+                //        TiaPortalItem = d,
+                //        Comment = d.Comment != null ? d.Comment.GetText(CultureInfo.CurrentCulture) : null
+                //    };
+                //    main.SubItems.Add(fld);
+
+                //    //LoadSubDevicesViaOpennessDlls(fld, d);
+                //}
+                //else
+                //{
+                //    var fld = new TIAOpennessControllerFolder(this)
+                //    {
+                //        Name = d.Name,
+                //        TiaPortalItem = d,
+                //        Comment = d.Comment != null ? d.Comment.GetText(CultureInfo.CurrentCulture) : null
+                //    };
+                //    main.SubItems.Add(fld);
+
+                //    //LoadControlerFolderViaOpennessDlls(fld, controller);
+                //}
             }
         }
 
