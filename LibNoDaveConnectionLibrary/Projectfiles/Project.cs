@@ -1,8 +1,11 @@
-﻿using DotNetSiemensPLCToolBoxLibrary.DataTypes;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using DotNetSiemensPLCToolBoxLibrary.DataTypes;
+using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using NLog;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
@@ -10,7 +13,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
     [Serializable]
     public abstract class Project
     {
-
         internal static Logger logger = LogManager.GetCurrentClassLogger();
         public abstract ProjectType ProjectType { get; }
 
@@ -58,6 +60,61 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 retVal = ProjectFile;
 
             return retVal;
+        }
+
+        public void TryInstallingGSD(string version)
+        {
+            string siemensGsdPath =
+                $"C:\\ProgramData\\Siemens\\Automation\\Portal V{version}\\data\\xdd\\gsd";
+
+            string[] gsdFiles = Directory.GetFiles(
+                $"{ProjectFolder}AdditionalFiles\\GSD\\",
+                "*.xml",
+                SearchOption.AllDirectories
+            );
+            string[] bmpFiles = Directory.GetFiles(
+                $"{ProjectFolder}AdditionalFiles\\GSD\\",
+                "*.bmp",
+                SearchOption.AllDirectories
+            );
+
+            foreach (string gsdFile in gsdFiles)
+            {
+                string gsdName = gsdFile.Split('\\').Last().Replace(".xml", "");
+                if (!Directory.Exists($"{siemensGsdPath}\\{gsdName}"))
+                {
+                    Directory.CreateDirectory($"{siemensGsdPath}\\{gsdName}");
+                    File.Copy(gsdFile, $"{siemensGsdPath}\\{gsdName}\\{gsdName}.xml");
+
+                    string xml = File.ReadAllText(gsdFile);
+                    CopyBmpFile(xml, bmpFiles, $"{siemensGsdPath}\\{gsdName}\\");
+                }
+            }
+        }
+
+        public void CopyBmpFile(string xmlFile, string[] bmpFiles, string path)
+        {
+            foreach (
+                Match graphicsList in Regex.Matches(
+                    xmlFile,
+                    @"<GraphicsList>([\s\S]+?)</GraphicsList>"
+                )
+            )
+            {
+                foreach (
+                    Match graphic in Regex.Matches(graphicsList.Value, @"GraphicFile=([\s\S]+?)/>")
+                )
+                {
+                    string graphicName = graphic.Value.Split('"')[1];
+
+                    foreach (string bmpFile in bmpFiles)
+                        if (
+                            bmpFile.Split('\\').Last().Replace(".bmp", "").ToUpper()
+                            == graphicName.ToUpper()
+                        )
+                            File.Copy(bmpFile, $"{path}{bmpFile.Split('\\').Last()}");
+                }
+            }
         }
     }
 }

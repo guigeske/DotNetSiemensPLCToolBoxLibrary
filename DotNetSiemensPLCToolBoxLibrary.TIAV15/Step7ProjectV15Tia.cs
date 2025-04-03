@@ -866,6 +866,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
 
         internal void LoadViaOpennessDlls(Credentials credentials)
         {
+            bool installed = false;
             for (int i = 0; i < 10; i++)
             {
                 try
@@ -894,13 +895,29 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15
                 }
                 catch (Siemens.Engineering.EngineeringSecurityException ex)
                 {
-                    throw;
+                    throw ex;
+                }
+                catch (Siemens.Engineering.EngineeringTargetInvocationException ex)
+                {
+                    if (ex.Message.Contains("The following support packages are missing"))
+                    {
+                        if (installed)
+                            throw ex;
+
+                        TryInstallingGSD("15");
+                        installed = true;
+                    }
+                    else
+                        throw new Exception("Wrong Credentials.");
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("Ungültige Anmeldedaten"))
+                        throw ex;
                     if (i == 9)
-                        throw;
+                        throw ex;
                 }
+
                 if (tiapProject != null)
                     break;
             }

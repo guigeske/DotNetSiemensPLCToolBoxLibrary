@@ -862,6 +862,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V14SP1
 
         internal void OpenViaOpennessDlls()
         {
+            bool installed = false;
             for (int i = 0; i < 10; i++)
             {
                 try
@@ -879,12 +880,27 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V14SP1
                 }
                 catch (Siemens.Engineering.EngineeringSecurityException ex)
                 {
-                    throw;
+                    throw ex;
+                }
+                catch (Siemens.Engineering.EngineeringTargetInvocationException ex)
+                {
+                    if (ex.Message.Contains("The following support packages are missing"))
+                    {
+                        if (installed)
+                            throw ex;
+
+                        TryInstallingGSD("14");
+                        installed = true;
+                    }
+                    else
+                        throw new Exception("Wrong Credentials.");
                 }
                 catch (Exception ex)
                 {
+                    if (ex.Message.Contains("Ungültige Anmeldedaten"))
+                        throw ex;
                     if (i == 9)
-                        throw;
+                        throw ex;
                 }
 
                 if (tiapProject != null)
