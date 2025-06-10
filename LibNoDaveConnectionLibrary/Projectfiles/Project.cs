@@ -64,32 +64,32 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         public void TryInstallingGSD(string version)
         {
-            string siemensGsdPath =
-                $"C:\\ProgramData\\Siemens\\Automation\\Portal V{version}\\data\\xdd\\gsd";
+            //string siemensGsdPath =
+            //    $"C:\\ProgramData\\Siemens\\Automation\\Portal V{version}\\data\\xdd\\gsd";
 
-            string[] gsdFiles = Directory.GetFiles(
-                $"{ProjectFolder}AdditionalFiles\\GSD\\",
-                "*.xml",
-                SearchOption.AllDirectories
-            );
-            string[] bmpFiles = Directory.GetFiles(
-                $"{ProjectFolder}AdditionalFiles\\GSD\\",
-                "*.bmp",
-                SearchOption.AllDirectories
-            );
+            //string[] gsdFiles = Directory.GetFiles(
+            //    $"{ProjectFolder}AdditionalFiles\\GSD\\",
+            //    "*.xml",
+            //    SearchOption.AllDirectories
+            //);
+            //string[] bmpFiles = Directory.GetFiles(
+            //    $"{ProjectFolder}AdditionalFiles\\GSD\\",
+            //    "*.bmp",
+            //    SearchOption.AllDirectories
+            //);
 
-            foreach (string gsdFile in gsdFiles)
-            {
-                string gsdName = gsdFile.Split('\\').Last().Replace(".xml", "");
-                if (!Directory.Exists($"{siemensGsdPath}\\{gsdName}"))
-                {
-                    Directory.CreateDirectory($"{siemensGsdPath}\\{gsdName}");
-                    File.Copy(gsdFile, $"{siemensGsdPath}\\{gsdName}\\{gsdName}.xml");
+            //foreach (string gsdFile in gsdFiles)
+            //{
+            //    string gsdName = gsdFile.Split('\\').Last().Replace(".xml", "");
+            //    if (!Directory.Exists($"{siemensGsdPath}\\{gsdName}"))
+            //    {
+            //        Directory.CreateDirectory($"{siemensGsdPath}\\{gsdName}");
+            //        File.Copy(gsdFile, $"{siemensGsdPath}\\{gsdName}\\{gsdName}.xml");
 
-                    string xml = File.ReadAllText(gsdFile);
-                    CopyBmpFile(xml, bmpFiles, $"{siemensGsdPath}\\{gsdName}\\");
-                }
-            }
+            //        string xml = File.ReadAllText(gsdFile);
+            //        CopyBmpFile(xml, bmpFiles, $"{siemensGsdPath}\\{gsdName}\\");
+            //    }
+            //}
         }
 
         public void CopyBmpFile(string xmlFile, string[] bmpFiles, string path)
