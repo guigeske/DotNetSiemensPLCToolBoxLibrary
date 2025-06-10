@@ -600,10 +600,22 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
                     retVal.Parameter = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref ParaList, blkInfo.BlockType, false, this, retVal);
 
-                    if (myTmpBlk.blockdescription != null)
+                    byte[] desc = myTmpBlk.blockdescription;
+
+                    if (desc != null && desc.Length > 4 && desc[1] < desc.Length)
                     {
-                        retVal.Title = Project.ProjectEncoding.GetString(myTmpBlk.blockdescription, 3, myTmpBlk.blockdescription[1] - 4);
-                        retVal.Description = Project.ProjectEncoding.GetString(myTmpBlk.blockdescription, myTmpBlk.blockdescription[1], myTmpBlk.blockdescription.Length - myTmpBlk.blockdescription[1] - 1).Replace("\n", Environment.NewLine);
+                        int titleLength = desc[1] - 4;
+                        if (titleLength > 0 && desc.Length >= desc[1])
+                        {
+                            retVal.Title = Project.ProjectEncoding.GetString(desc, 3, titleLength);
+                            int descriptionLength = desc.Length - desc[1] - 1;
+                            if (descriptionLength > 0)
+                            {
+                                retVal.Description = Project.ProjectEncoding
+                                    .GetString(desc, desc[1], descriptionLength)
+                                    .Replace("\n", Environment.NewLine);
+                            }
+                        }
                     }
 
                     if (blkInfo.BlockType == PLCBlockType.FC || blkInfo.BlockType == PLCBlockType.FB || blkInfo.BlockType == PLCBlockType.OB)
