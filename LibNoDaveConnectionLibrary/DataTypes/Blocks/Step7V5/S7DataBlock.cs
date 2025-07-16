@@ -1,10 +1,10 @@
 ﻿/*
  This implements a high level Wrapper between libnodave.dll and applications written
  in MS .Net languages.
- 
+
  This ConnectionLibrary was written by Jochen Kuehner
  * http://jfk-solutuions.de/
- * 
+ *
  * Thanks go to:
  * Steffen Krayer -> For his work on MC7 decoding and the Source for his Decoder
  * Zottel         -> For LibNoDave
@@ -21,16 +21,19 @@
 
  You should have received a copy of the GNU Library General Public License
  along with Libnodave; see the file COPYING.  If not, write to
- the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
+ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
+
+using DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
 {
+    [JsonObject(MemberSerialization.OptIn)]
     [Serializable()]
     public class S7DataBlock : S7Block, IDataBlock
     {
@@ -46,9 +49,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
         }
 
-        public int FBNumber { get; set;}  //If it is a Instance DB
+        public int FBNumber { get; set; }  //If it is a Instance DB
         public bool IsInstanceDB { get; set; }
 
+        [JsonProperty(Order = 10)]
         public IDataRow Structure
         {
             get
@@ -92,7 +96,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         public IDataRow GetArrayExpandedStructure()
         {
             //Todo: Vergleich der Expand Options, und beim änderen eines inneren wertes des blocks, diesen löschen (erst bei schreibsup wichtig!)
-            if (expStruct != null) 
+            if (expStruct != null)
                 return expStruct;
             return expStruct = (S7DataRow)GetArrayExpandedStructure(new S7DataBlockExpandOptions());
         }
@@ -122,14 +126,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             retVal.AppendLine();
             retVal.AppendLine();
 
-
             if (this.Structure.Children != null && !this.IsInstanceDB)
             {
                 retVal.AppendLine("  STRUCT");
                 string lines = AWLToSource.DataRowToSource(((S7DataRow)this.Structure), "    ");
                 retVal.Append(lines);
                 retVal.AppendLine("  END_STRUCT ;");
-
             }
             else if (this.IsInstanceDB)
             {
@@ -168,6 +170,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             if (Structure != null)
                 retVal += Structure.ToString();
             return retVal;
-        }       
+        }
     }
 }

@@ -1,10 +1,10 @@
 ﻿/*
  This implements a high level Wrapper between libnodave.dll and applications written
  in MS .Net languages.
- 
+
  This ConnectionLibrary was written by Jochen Kuehner
  * http://jfk-solutuions.de/
- * 
+ *
  * Thanks go to:
  * Steffen Krayer -> For his work on MC7 decoding and the Source for his Decoder
  * Zottel         -> For LibNoDave
@@ -21,14 +21,13 @@
 
  You should have received a copy of the GNU Library General Public License
  along with Libnodave; see the file COPYING.  If not, write to
- the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
+ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-using System;
-using System.Collections.Generic;
 
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.AWL.Step7V5;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
+using System;
+using System.Collections.Generic;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
 {
@@ -46,7 +45,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         /// <summary>
         /// The Block Attributes that contain information about the block status and special properties
         /// </summary>
-        public S7BlockAtributes BlockAttribute { get; set; } 
+        public S7BlockAtributes BlockAttribute { get; set; }
 
         /// <summary>
         /// The Block Attributes defined from the Simatic Manager in Attributes Tab
@@ -59,7 +58,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         public double Length { get; set; }
 
         /// <summary>
-        /// The Title of the Block from the S7 Project file. it is not the online name of the block. 
+        /// The Title of the Block from the S7 Project file. it is not the online name of the block.
         /// </summary>
         /// <remarks>The Header name of an online block is in the "Name" field</remarks>
         public string Title { get; set; }
@@ -86,7 +85,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         /// Timestamp of the last change to the blocks MC7 code
         /// </summary>
         public DateTime LastCodeChange { get; set; }
-        
+
         /// <summary>
         /// Timestamp of the last change to the interface of the blocks
         /// </summary>
@@ -123,14 +122,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         /// <summary>
         /// the Work memory requirement from Simatic Manager
         /// </summary>
-        public int WorkMemorySize { get; set;}
-        
+        public int WorkMemorySize { get; set; }
+
         /// <summary>
         /// The block has currently set an Password
         /// </summary>
         /// <remarks>be aware that the block can also be be marked as protected via the "BlockAttributes"</remarks>
         public bool KnowHowProtection { get; set; }
-        
+
         /// <summary>
         /// The checksum of the Blocks MC7 code (without the actual values of Datablocks)
         /// This property can be used to detect Block changes
@@ -164,7 +163,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         {
             get
             {
-                if (ParentFolder != null)
+                if (ParentFolder != null && ParentFolder.Parent != null)
                 {
                     ISymbolTable tmp = ((IProgrammFolder)ParentFolder.Parent).SymbolTable;
                     if (tmp != null)
@@ -175,7 +174,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
 
         [Flags]
-        public enum S7BlockAtributes: byte
+        public enum S7BlockAtributes : byte
         {
             /// <summary>
             /// The block exists in the controller, and is also linked into execution.
@@ -207,7 +206,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             NonRetain = 32, //.5
 
             /// <summary>
-            /// This is an Safety Block in an Safety PLC. 
+            /// This is an Safety Block in an Safety PLC.
             /// </summary>
             FBlock = 64 //.6
 
@@ -233,4 +232,3 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
     }
 }
-

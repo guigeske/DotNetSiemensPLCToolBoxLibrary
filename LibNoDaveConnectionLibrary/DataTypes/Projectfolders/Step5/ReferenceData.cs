@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks;
+﻿using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step5;
 using DotNetSiemensPLCToolBoxLibrary.Projectfiles;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5
 {
@@ -16,6 +16,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5
         private bool ReferenceDataLoaded = false;
 
         private List<ReferenceDataEntry> _ReferenceDataEntrys = new List<ReferenceDataEntry>();
+
         public List<ReferenceDataEntry> ReferenceDataEntrys
         {
             get
@@ -23,7 +24,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5
                 while (!ReferenceDataLoaded)
                 { Thread.Sleep(500); }
                 return _ReferenceDataEntrys;
-            }            
+            }
         }
 
         internal bool showDeleted { get; set; }
@@ -50,16 +51,16 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5
             Thread trd = new Thread(new ThreadStart(LoadReferenceData));
             trd.Start();
         }
-        
+
         private void LoadReferenceData()
         {
             ReferenceDataLoaded = false;
 
-            Step5ProgrammFolder prgFld = (Step5ProgrammFolder) this.Parent;
-            Step5BlocksFolder blkFld = (Step5BlocksFolder) prgFld.BlocksFolder;
-            SymbolTable smyTab = (SymbolTable) prgFld.SymbolTable;
+            Step5ProgrammFolder prgFld = (Step5ProgrammFolder)this.Parent;
+            Step5BlocksFolder blkFld = (Step5BlocksFolder)prgFld.BlocksFolder;
+            SymbolTable smyTab = (SymbolTable)prgFld.SymbolTable;
 
-            //try
+            try
             {
                 foreach (ProjectBlockInfo projectBlockInfo in blkFld.readPlcBlocksList())
                 {
@@ -82,8 +83,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5
                                         akdb = "";
                                     else
                                         akdb = functionBlockRow.Parameter;
-
-
 
                                 rowNR++;
                                 if (functionBlockRow.MC5LIB_SYMTAB_Row != null && ((ReferenceDataAccessMode)functionBlockRow.MC5LIB_SYMTAB_Row[9]) != ReferenceDataAccessMode.None)
@@ -126,17 +125,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5
                                 }
                             }
                         }
-
-
                     }
                 }
             }
-            /*catch (Exception ex)
+            catch (Exception ex)
             {
-                MessageBox.Show("There was an error generating the Reference Data! Maybe the Step5 project is broken? \n" + ex.Message);
-            }*/
+                Console.WriteLine("There was an error generating the Reference Data! Maybe the Step5 project is broken? \n" + ex.Message);
+            }
 
             ReferenceDataLoaded = true;
-        }                
+        }
     }
 }

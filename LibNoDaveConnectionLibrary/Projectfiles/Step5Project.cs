@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes;
+﻿using DotNetSiemensPLCToolBoxLibrary.DataTypes;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step5;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5;
 using DotNetSiemensPLCToolBoxLibrary.General;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 {
@@ -98,7 +98,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 sections_lst.Add(s5ProjectByteArray[pos + 15] + s5ProjectByteArray[pos + 16] * 0x100);
             }
 
-
             Step5BlocksFolder blkFld = new Step5BlocksFolder() { Name = "Blocks", Project = this, Parent = ProjectStructure };
             BlocksFolder = blkFld;
             ProjectStructure.SubItems.Add(blkFld);
@@ -144,7 +143,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     bstHeaders.Add(tmp);
                 }
 
-
                 //int section_size = ((s5ProjectByteArray[section_start + 21] * 0x100) + s5ProjectByteArray[section_start + 20]) * 0x80;
 
                 //if (section_size == 0)   //only for debbuging
@@ -160,8 +158,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 //Don't know wich Information is in the Section Header!
                 int section_header_size = s5ProjectByteArray[section_start + 18] * 0x80;
 
-
-
                 //Read the Block normaly (using the Section-Headers)
                 {
                     //for (int n = blkstart + blkheadersize; n < blkstart + blksize /* s5ProjectByteArray.Length - 2 */; n++)
@@ -170,7 +166,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     //    n += 0x80;
 
                     while (akanz < anzbst && n + 1 < s5ProjectByteArray.Length)
-                    //n < section_start + section_size)                       
+                    //n < section_start + section_size)
                     {
                         akanz++;
                         int len = 0;
@@ -208,7 +204,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             tmpBlk.ParentFolder = blkFld;
 
                             blkFld.step5BlocksinfoList.Add(tmpBlk);
-                            //string aa = System.Text.Encoding.GetEncoding("ISO-8859-1").GetString(code);                        
+                            //string aa = System.Text.Encoding.GetEncoding("ISO-8859-1").GetString(code);
                         }
                         else if (s5ProjectByteArray[n] == 0x06) //DB - Vorkopf
                         {
@@ -335,7 +331,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             var refFld = new ReferenceData((Step5ProgrammFolder)ProjectStructure, this);
             ProjectStructure.SubItems.Add(refFld); // { Parent = ProjectStructure, Project = this });
             _allFolders.Add(refFld);
-
         }
 
         private bool IsCurrentPosABlockStart(byte[] s5ProjectByteArray, int n)
@@ -383,7 +378,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 tmpBlk.ParentFolder = blkFld;
 
                 //blkFld.step5BlocksinfoList.Add(tmpBlk);
-                //string aa = System.Text.Encoding.GetEncoding("ISO-8859-1").GetString(code);                        
+                //string aa = System.Text.Encoding.GetEncoding("ISO-8859-1").GetString(code);
             }
             else if (s5ProjectByteArray[pos] == 0x06) //DB - Vorkopf
             {

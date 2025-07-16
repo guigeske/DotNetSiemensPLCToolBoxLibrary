@@ -23,19 +23,20 @@
  along with Libnodave; see the file COPYING.  If not, write to
  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
+
 using DotNetSiemensPLCToolBoxLibrary.Communication.LibNoDave;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
 using DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7;
-using DotNetSiemensPLCToolBoxLibrary.Projectfiles;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Text;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
 {
+    [JsonObject(MemberSerialization.OptIn)]
     [Serializable()]
     public class S7FunctionBlockRow : FunctionBlockRow, INotifyPropertyChanged
     {
@@ -56,6 +57,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
 
         private bool _CombineDbAccess = false;
+
         internal bool CombineDBAccess
         {
             get { return _CombineDbAccess; }
@@ -66,6 +68,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         public List<FunctionBlockRow> CombinedCommands { get; internal set; }
 
         private string _parameter;
+
+        [JsonProperty]
         public string Parameter
         {
             get { return _parameter; }
@@ -81,6 +85,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         public string DiName { get; set; }
 
         private SymbolTableEntry _SymbolTableEntry;
+
         public SymbolTableEntry SymbolTableEntry
         {
             get
@@ -102,6 +107,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
 
         private List<string> _extparameter;
+
         public List<string> ExtParameter
         {
             get { return _extparameter; }
@@ -127,6 +133,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
 
         private List<S7FunctionBlockParameter> _callparameter;
+
         public List<S7FunctionBlockParameter> CallParameter
         {
             get { return _callparameter; }
@@ -137,10 +144,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 CombinedCommands = null;
             }
         }
-        
+
         public string NetworkName { get; set; }
 
         private int _jumpwidth;
+
         internal int JumpWidth
         {
             get { return _jumpwidth; }
@@ -153,6 +161,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
 
         private byte[] _MC7;
+
         public byte[] MC7
         {
             get
@@ -189,6 +198,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             DB = 32,
             ALL = 0x3F
         }
+
         public static short _GetCommandStatusAskSize(SelectedStatusValues mySel, byte telegrammType)
         {
             short size = 0;
@@ -353,6 +363,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         }
 
         private BlockStatus _actualBlockStatus;
+
         public BlockStatus ActualBlockStatus
         {
             get { return _actualBlockStatus; }
@@ -367,8 +378,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         {
             public event PropertyChangedEventHandler PropertyChanged;
 
-            private
-            void NotifyPropertyChanged(String info)
+            private void NotifyPropertyChanged(String info)
             {
                 if (PropertyChanged != null)
                 {
@@ -376,8 +386,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 }
             }
 
-
             private short? _stw;
+
             public short? STW
             {
                 get { return _stw; }
@@ -396,16 +406,25 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 }
             }
 
-            public bool? VKE { get { return Convert.ToBoolean(STW & 2); } }
-            public bool? STA { get { return Convert.ToBoolean(STW & 4); } }
-            public bool? OR { get { return Convert.ToBoolean(STW & 8); } }
-            public bool? OS { get { return Convert.ToBoolean(STW & 16); } }
-            public bool? OV { get { return Convert.ToBoolean(STW & 32); } }
-            public bool? A1 { get { return Convert.ToBoolean(STW & 64); } }
-            public bool? A0 { get { return Convert.ToBoolean(STW & 128); } }
-            public bool? BIE { get { return Convert.ToBoolean(STW & 256); } }
+            public bool? VKE
+            { get { return Convert.ToBoolean(STW & 2); } }
+            public bool? STA
+            { get { return Convert.ToBoolean(STW & 4); } }
+            public bool? OR
+            { get { return Convert.ToBoolean(STW & 8); } }
+            public bool? OS
+            { get { return Convert.ToBoolean(STW & 16); } }
+            public bool? OV
+            { get { return Convert.ToBoolean(STW & 32); } }
+            public bool? A1
+            { get { return Convert.ToBoolean(STW & 64); } }
+            public bool? A0
+            { get { return Convert.ToBoolean(STW & 128); } }
+            public bool? BIE
+            { get { return Convert.ToBoolean(STW & 256); } }
 
             private int? _akku1;
+
             public int? Akku1
             {
                 get { return _akku1; }
@@ -417,6 +436,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
 
             private int? _akku2;
+
             public int? Akku2
             {
                 get { return _akku2; }
@@ -428,6 +448,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
 
             private int? _ar1;
+
             public int? AR1
             {
                 get { return _ar1; }
@@ -439,6 +460,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
 
             private int? _ar2;
+
             public int? AR2
             {
                 get { return _ar2; }
@@ -450,6 +472,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
 
             private int? _db;
+
             public int? DB
             {
                 get { return _db; }
@@ -461,6 +484,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
 
             private int? _di;
+
             public int? DI
             {
                 get { return _di; }
@@ -561,7 +585,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 return ret;
             }
         }
-        #endregion
+
+        #endregion PlcBlockStatus
 
         public S7FunctionBlockRow()
         {
@@ -667,7 +692,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         {
             if (Command == "NETWORK")
                 return (MnemonicLanguage == MnemonicLanguage.English ? "Network " : "Netzwerk ") + Parameter + " : " + NetworkName
-                       + ( string.IsNullOrEmpty(Comment) ? string.Empty : "\r\n\t Comment : " + Comment.Replace("\n", "\r\n\t           ") );
+                       + (string.IsNullOrEmpty(Comment) ? string.Empty : "\r\n\t Comment : " + Comment.Replace("\n", "\r\n\t           "));
 
             string retVal = "";
             if (Label == null || Label == "")
@@ -730,12 +755,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                         if (!DiName.StartsWith("#"))
                         {
                             var sym2 = this.Parent.SymbolTable.GetEntryFromOperand(nm);
-                            if (sym2 != null) 
+                            if (sym2 != null)
                                 nm = "\"" + sym2.Symbol + "\"";
                         }
                     }
                 }
-                par += ", " + nm;               
+                par += ", " + nm;
             }
             else if (useDataBlocksSymbolic && Parameter.StartsWith("DB") && Parameter.Length > 2 && Parameter[2] != '[' && Parameter[2] != 'D' && Parameter[2] != 'W' && Parameter[2] != 'B' && Parameter[2] != 'X' && this.Parent != null)
             {
@@ -743,9 +768,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 var fld = (this.Parent).ParentFolder as BlocksOfflineFolder;
                 if (fld != null)
                 {
-                    var sym = this.Parent.SymbolTable.GetEntryFromOperand(paras[0]);
+                    SymbolTableEntry sym;
+                    try
+                    {
+                        sym = this.Parent.SymbolTable.GetEntryFromOperand(paras[0]);
+                    }
+                    catch
+                    {
+                        sym = null;
+                    }
 
-                    if (sym != null) 
+                    if (sym != null)
                         par = "\"" + sym.Symbol + "\"";
 
                     if (paras.Length > 1)
@@ -791,7 +824,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             else
             {
                 var sym = SymbolTableEntry;
-                if (sym != null && useSymbol) par = "\"" + sym.Symbol + "\"";
+                if (sym != null && useSymbol && Command != "SPA") par = "\"" + sym.Symbol + "\"";
             }
 
             if (Command == "CALL")

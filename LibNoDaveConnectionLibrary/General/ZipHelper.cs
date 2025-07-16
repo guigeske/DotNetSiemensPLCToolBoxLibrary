@@ -3,7 +3,9 @@ using System.IO;
 using System.Text.RegularExpressions;
 
 #if SHARPZIPLIB
+
 using ICSharpCode.SharpZipLib.Zip;
+
 #endif
 
 namespace DotNetSiemensPLCToolBoxLibrary.General
@@ -13,7 +15,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
 #if SHARPZIPLIB
         private ZipFile _zipFile;
 #endif
-        private string _zipFileName;
+        private readonly string _zipFileName;
 
         public string GetFirstZipEntryWithEnding(string ending)
         {
@@ -64,7 +66,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
                 return zipHelper;
             }
             catch (Exception)
-            { }
+            {
+                Console.WriteLine("1 ZipHelper.cs threw exception");
+            }
 #endif
             return null;
         }
@@ -80,12 +84,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
                 return zipHelper;
             }
             catch (Exception)
-            { }
+            {
+                Console.WriteLine("1 ZipHelper.cs threw exception");
+            }
 #endif
             return null;
         }
 
-        public bool IsZipFile { get { return this._zipFile != null; } }
+        public bool IsZipFile
+        { get { return this._zipFile != null; } }
 
         public ZipHelper(string file)
         {
@@ -99,7 +106,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
                     this._zipFile = new ZipFile(file);
                 }
                 catch (Exception)
-                { }
+                {
+                    Console.WriteLine("3 ZipHelper.cs threw exception");
+                }
             }
 #endif
         }
@@ -141,7 +150,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
                 ZipFile zf = (ZipFile)_zipFile;
                 int fileEntry = zf.FindEntry(file.Replace("\\", "/"), true);
                 return zf.GetInputStream(fileEntry);
-
             }
 #endif
         }
@@ -179,9 +187,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
         }
 
 #if SHARPZIPLIB
+
         public class CustomStaticDataSource : IStaticDataSource
         {
             private Stream _stream;
+
             // Implement method from IStaticDataSource
             public Stream GetSource()
             {
@@ -195,7 +205,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
                 _stream.Position = 0;
             }
         }
+
 #endif
+
         public void WriteBackStream(string file, Stream strm)
         {
 #if SHARPZIPLIB
@@ -207,7 +219,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
             }
             else
             {
-
                 _zipFile.BeginUpdate();
 
                 int nr = _zipFile.FindEntry(file.Replace("\\", "/"), true);
@@ -231,7 +242,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
 #endif
         }
 
-
         public long GetStreamLength(string file, Stream strm)
         {
 #if SHARPZIPLIB
@@ -249,6 +259,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
             }
 #endif
         }
+
         public bool FileExists(string file)
         {
 #if SHARPZIPLIB
@@ -267,6 +278,5 @@ namespace DotNetSiemensPLCToolBoxLibrary.General
             }
 #endif
         }
-
     }
 }

@@ -1,12 +1,12 @@
+using DotNetSiemensPLCToolBoxLibrary.Projectfiles;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
-using System.Linq;
-using DotNetSiemensPLCToolBoxLibrary.Projectfiles;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 {
+    [JsonObject(MemberSerialization.OptIn)]
     public class SymbolTable : Step7ProjectFolder, ISymbolTable
     {
         public String Folder { get; set; }
@@ -15,6 +15,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
         private Dictionary<string, SymbolTableEntry> symbolIndexList = new Dictionary<string, SymbolTableEntry>();
 
         private List<SymbolTableEntry> _step7SymbolTableEntrys;
+
         public List<SymbolTableEntry> SymbolTableEntrys
         {
             get
@@ -35,17 +36,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
         /// <param name="language"></param>
         /// <returns></returns>
         public string GetSymbolTableAsSdf()
-        {            
+        {
             var symbolTable = new System.Text.StringBuilder();
             foreach (var entry in SymbolTableEntrys)
             {
                 symbolTable.Append("\"" + entry.Symbol.PadRight(24) + "\",");
-                if(Project.ProjectLanguage == MnemonicLanguage.English)
+                if (Project.ProjectLanguage == MnemonicLanguage.English)
                     symbolTable.Append("\"" + entry.OperandIEC.PadRight(12) + "\",");
                 else
                     symbolTable.Append("\"" + entry.Operand.PadRight(12) + "\",");
                 symbolTable.Append("\"" + entry.DataType.PadRight(10) + "\",");
-                symbolTable.AppendLine("\"" + entry.Comment.PadRight(80) + "\"");                
+                symbolTable.AppendLine("\"" + entry.Comment.PadRight(80) + "\"");
             }
             return symbolTable.ToString();
         }
@@ -63,10 +64,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
             operandIndexList.TryGetValue(tmpname, out retval);
 
-            if (retval != null) 
+            if (retval != null)
                 return retval;
 
-            if (tmpname.StartsWith("E")) 
+            if (tmpname.StartsWith("E"))
                 operandIndexList.TryGetValue("I" + tmpname.Substring(1), out retval);
             else if (tmpname.StartsWith("I"))
                 operandIndexList.TryGetValue("E" + tmpname.Substring(1), out retval);
@@ -110,6 +111,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                             sym.Symbol = (string)row["_SKZ"];
                             sym.Operand = (string)row["_OPHIST"];
                             sym.OperandIEC = (string)row["_OPIEC"];
+                            sym.Address = sym.OperandIEC.Replace(" ", "");
                             sym.DataType = (string)row["_DATATYP"];
                             sym.Comment = (string)row["_COMMENT"];
                             if ((bool)row["DELETED_FLAG"]) sym.Comment = "(deleted) " + sym.Comment;
@@ -133,8 +135,4 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
             }
         }
     }
-
 }
-        
-    
-

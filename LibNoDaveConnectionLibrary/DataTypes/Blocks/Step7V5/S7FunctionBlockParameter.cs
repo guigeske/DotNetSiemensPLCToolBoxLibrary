@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
-
-namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
+﻿namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
 {
     public class S7FunctionBlockParameter
     {
@@ -30,10 +24,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 if (Parent.Parent != null)
                 {
                     var sym = Parent.Parent.SymbolTable;
-                    if (sym != null)
+                    if (sym != null && Name != "SPA")
                     {
                         var ent = sym.GetEntryFromOperand(Value);
-                        if (ent != null) 
+                        if (ent != null)
                             return "\"" + ent.Symbol + "\"";
                     }
                 }

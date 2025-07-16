@@ -1,6 +1,6 @@
-﻿using System;
+﻿using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5;
+using System;
 using System.Text;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5;
 
 namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
 {
@@ -61,7 +61,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
                 if (s7DataRow.DataType == S7DataRowType.STRUCT)
                 {
                     retval += leerz + s7DataRow.Name + " : " + arr + s7DataRow.DataType + cmt + Environment.NewLine;
-                    retval += DataRowToSource(s7DataRow, leerz + " ");
+                    retval += DataRowToSource(s7DataRow, leerz + "      ");
                     retval += leerz + "END_STRUCT ;" + Environment.NewLine;
                 }
                 else

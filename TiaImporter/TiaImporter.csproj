@@ -2,7 +2,7 @@
   <PropertyGroup><GenerateErrorForMissingTargetingPacks>false</GenerateErrorForMissingTargetingPacks></PropertyGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net48</TargetFrameworks>    
+    <TargetFrameworks>net481</TargetFrameworks>    
     <ApplicationIcon />
     <StartupObject />
 	  <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>

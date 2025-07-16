@@ -1,36 +1,34 @@
+using DotNetSiemensPLCToolBoxLibrary.DataTypes;
+using DotNetSiemensPLCToolBoxLibrary.DataTypes.Hardware.Step7V5;
+using DotNetSiemensPLCToolBoxLibrary.DataTypes.Network;
+using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
+using DotNetSiemensPLCToolBoxLibrary.General;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.IO;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Hardware.Step7V5;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
-using DotNetSiemensPLCToolBoxLibrary.General;
-using DotNetSiemensPLCToolBoxLibrary.PLCs.S5.MC5;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Network;
-using System.Diagnostics;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 {
     public class Step7ProjectV5 : Project, IDisposable
     {
         //types object
-        const int objectType_Simatic300 = 1314969;
-        const int objectType_Simatic400 = 1314970;
-        const int objectType_Simatic400H = 1315650;
-        const int objectType_SimaticRTX = 1315651;
-        const int objectType_EternetInCPU3xx = 2364796;
-        const int objectType_EternetInCPU3xx_2 = 2364572; //Alternative type e.g. 6ES7 318-3EL00-0AB0 (Only one port).
-        const int objectType_EternetInCPU3xxF = 2364818;
-        const int objectType_EternetInCPU4xx = 2364763;
-        const int objectType_EternetInCPURTX = 2364315; // E.g. 6ES7 611-4SB00-0YB7
-        const int objectType_MpiDPinCPU = 1314972;
-        const int objectType_MpiDP400 = 1315038;
-        const int objectType_MpiDP300 = 1315016;
-        
+        private const int objectType_Simatic300 = 1314969;
+
+        private const int objectType_Simatic400 = 1314970;
+        private const int objectType_Simatic400H = 1315650;
+        private const int objectType_SimaticRTX = 1315651;
+        private const int objectType_EternetInCPU3xx = 2364796;
+        private const int objectType_EternetInCPU3xx_2 = 2364572; //Alternative type e.g. 6ES7 318-3EL00-0AB0 (Only one port).
+        private const int objectType_EternetInCPU3xxF = 2364818;
+        private const int objectType_EternetInCPU4xx = 2364763;
+        private const int objectType_EternetInCPURTX = 2364315; // E.g. 6ES7 611-4SB00-0YB7
+        private const int objectType_MpiDPinCPU = 1314972;
+        private const int objectType_MpiDP400 = 1315038;
+        private const int objectType_MpiDP300 = 1315016;
+
         private string _offlineblockdb;
 
         internal bool _showDeleted = false;
@@ -105,7 +103,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         public Step7ProjectV5(Stream projectfile, bool showDeleted, Encoding prEn)
         {
-            this._ziphelper = ZipHelper.GetZipHelper(projectfile);            
+            this._ziphelper = ZipHelper.GetZipHelper(projectfile);
             _projectfilename = this._ziphelper.GetFirstZipEntryWithEnding(".s7p");
             if (string.IsNullOrEmpty(_projectfilename))
                 _projectfilename = this._ziphelper.GetFirstZipEntryWithEnding(".s7l");
@@ -141,7 +139,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
             LoadProjectHeader(showDeleted);
         }
-
 
         private void LoadProjectHeader(bool showDeleted)
         {
@@ -210,6 +207,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
         */
 
         private List<CPUFolder> _cpuFolders;
+
         public List<CPUFolder> CPUFolders
         {
             get
@@ -222,6 +220,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
         }
 
         private List<CPFolder> _cpFolders;
+
         public List<CPFolder> CPFolders
         {
             get
@@ -234,6 +233,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
         }
 
         private List<S7ProgrammFolder> _s7ProgrammFolders;
+
         public List<S7ProgrammFolder> S7ProgrammFolders
         {
             get
@@ -246,6 +246,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
         }
 
         private List<BlocksOfflineFolder> _blocksOfflineFolders;
+
         public List<BlocksOfflineFolder> BlocksOfflineFolders
         {
             get
@@ -262,7 +263,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             get { return ProjectType.Step7; }
         }
 
-        override protected void LoadProject()
+        protected override void LoadProject()
         {
             _projectLoaded = true;
 
@@ -285,9 +286,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 {
                     if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                     {
-                        if ((int)row["OBJTYP"] == objectType_Simatic300 || 
-                            (int)row["OBJTYP"] == objectType_Simatic400 || 
-                            (int)row["OBJTYP"] == objectType_Simatic400H || 
+                        if ((int)row["OBJTYP"] == objectType_Simatic300 ||
+                            (int)row["OBJTYP"] == objectType_Simatic400 ||
+                            (int)row["OBJTYP"] == objectType_Simatic400H ||
                             (int)row["OBJTYP"] == objectType_SimaticRTX)
                         {
                             var x = new StationConfigurationFolder() { Project = this, Parent = ProjectStructure };
@@ -301,12 +302,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 case objectType_Simatic300:
                                     x.StationType = PLCType.Simatic300;
                                     break;
+
                                 case objectType_Simatic400:
                                     x.StationType = PLCType.Simatic400;
                                     break;
+
                                 case objectType_Simatic400H:
                                     x.StationType = PLCType.Simatic400H;
                                     break;
+
                                 case objectType_SimaticRTX:
                                     x.StationType = PLCType.SimaticRTX;
                                     break;
@@ -316,7 +320,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             stations.Add(x);
                             _allFolders.Add(x);
                         }
-                        else if ( Convert.ToInt32(row["OBJTYP"])==objectType_MpiDPinCPU)
+                        else if (Convert.ToInt32(row["OBJTYP"]) == objectType_MpiDPinCPU)
                         {
                             var dp = new CPFolder();
                             dp.UnitID = Convert.ToInt32(row["UNITID"]);//is UNITID in CPUFolder
@@ -327,7 +331,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     }
                 }
             }
-            
+
             //Get The HW Folder for the Station...
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hstatx" + _DirSeperator + "HRELATI1.DBF"))
             {
@@ -394,7 +398,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             }
             */
 
-
             //Get The CPs...
             string cp300Base = ProjectFolder + "hOmSave7" + _DirSeperator + "s7wb53ax" + _DirSeperator;
             string cp400Base = ProjectFolder + "hOmSave7" + _DirSeperator + "s7w1105x" + _DirSeperator;
@@ -433,7 +436,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
             //add subitem to parent
-            foreach(var cp in CPFolders.Where(x=>x.SubModulNumber > 0))
+            foreach (var cp in CPFolders.Where(x => x.SubModulNumber > 0))
             {
                 var parent = CPFolders.FirstOrDefault(x => x.ID == cp.UnitID);
                 if (parent != null) parent.SubModul = cp;
@@ -614,7 +617,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             hitsList.Add(matches);
                         }
                     }
-                    // Sort the list by the result with most matches. 
+                    // Sort the list by the result with most matches.
                     hitsList.Sort((a, b) => b.Count() - a.Count());
                     // Take the result with the most matches.
                     IEnumerable<int> matchList = hitsList.First();
@@ -636,9 +639,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     y.MLFB_OrderNumber = descr3;
                 }
                 catch
-                { }
+                {
+                    Console.WriteLine("1 Step7ProjectV5.cs threw exception");
+                }
             }
-            
+
             //Get The CPU(ET200S)...
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hkcomx" + _DirSeperator + "HOBJECT1.DBF"))
             {
@@ -676,8 +681,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     {
                         if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                         {
-                            if ((int)row["ID"] == y.ID && 
-                                (y.CpuType == PLCType.Simatic300 || 
+                            if ((int)row["ID"] == y.ID &&
+                                (y.CpuType == PLCType.Simatic300 ||
                                 y.CpuType == PLCType.SimaticRTX))
                             //if ((int)row["UNITID"] == y.UnitID && y.CpuType == PLCType.Simatic300)
                             {
@@ -730,7 +735,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     }
                 }
             }
-
 
             //Get The CPU(400)...
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk41ax" + _DirSeperator + "HOBJECT1.DBF"))
@@ -826,15 +830,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 {
                     if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                     {
-
                         if ((int)row["RELID"] == 16)
                         {
                             int cpuid = (int)row["SOBJID"];
                             int fldid = (int)row["TOBJID"];
                             foreach (var y in CPUFolders)
                             {
-                                if (y.ID == cpuid && 
-                                    (y.CpuType == PLCType.Simatic300 || 
+                                if (y.ID == cpuid &&
+                                    (y.CpuType == PLCType.Simatic300 ||
                                     y.CpuType == PLCType.SimaticRTX))
                                 {
                                     foreach (var z in S7ProgrammFolders)
@@ -862,7 +865,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 {
                     if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                     {
-
                         if ((int)row["RELID"] == 16)
                         {
                             int cpuid = (int)row["SOBJID"];
@@ -895,7 +897,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 {
                     if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                     {
-
                         if ((int)row["RELID"] == 16)
                         {
                             int cpuid = (int)row["SOBJID"];
@@ -1004,7 +1005,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Link all PbMasterSystems to the Stations             
+            //Link all PbMasterSystems to the Stations
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "S7HDPSSX" + _DirSeperator + "HRELATI1.DBF"))
             {
                 var lnkLst = new List<LinkHelp>();
@@ -1034,7 +1035,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get all Profibus Parts            
+            //Get all Profibus Parts
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hslntx" + _DirSeperator + "HOBJECT1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hslntx" + _DirSeperator + "HOBJECT1.DBF", _ziphelper, _DirSeperator);
@@ -1055,10 +1056,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-
-
-
-
             var pnMasterSystems = new List<ProfinetMasterSystem>();
 
             //Get all Profibus Master Systems
@@ -1077,16 +1074,16 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             pnMasterSystems.Add(x);
                             _allFolders.Add(x);
                         }
-                        else if (objType == objectType_EternetInCPU3xxF || 
-                            objType == objectType_EternetInCPU3xx || 
-                            objType == objectType_EternetInCPU4xx || 
-                            objType == objectType_EternetInCPU3xx_2 || 
+                        else if (objType == objectType_EternetInCPU3xxF ||
+                            objType == objectType_EternetInCPU3xx ||
+                            objType == objectType_EternetInCPU4xx ||
+                            objType == objectType_EternetInCPU3xx_2 ||
                             objType == objectType_EternetInCPURTX)
                         {
                             var cpu = CPUFolders.FirstOrDefault(x => x.ID == Convert.ToInt32(row["UNITID"]));
                             if (cpu != null) cpu.IdTobjId = Convert.ToInt32(row["ID"]);
                         }
-                        else if ( objType == 2364971 || objType == 2367589 )
+                        else if (objType == 2364971 || objType == 2367589)
                         {
                             var cp = CPFolders.FirstOrDefault(x => x.ID == (int)row["UNITID"]);
                             if (cp != null)
@@ -1099,7 +1096,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Link all PnMasterSystems to the Stations             
+            //Link all PnMasterSystems to the Stations
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hssiox" + _DirSeperator + "HRELATI1.DBF"))
             {
                 var lnkLst = new List<LinkHelp>();
@@ -1110,7 +1107,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 {
                     if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                     {
-                        if ( Convert.ToInt32(row["RELID"]) == 64)
+                        if (Convert.ToInt32(row["RELID"]) == 64)
                         {
                             var cpu = CPUFolders.FirstOrDefault(x => x.IdTobjId == Convert.ToInt32(row["SOBJID"]));
                             if (cpu != null) cpu.TobjId = Convert.ToInt32(row["TOBJID"]);
@@ -1141,12 +1138,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get all Profinet Parts ...     
+            //Get all Profinet Parts ...
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hdevnx" + _DirSeperator + "HOBJECT1.DBF"))
             {
                 var attLst = new List<AttrMeHelp>();
 
-                //Read real name from hattrme.dbf          
+                //Read real name from hattrme.dbf
                 if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hdevnx" + _DirSeperator + "HATTRME1.DBF"))
                 {
                     var dbfTbl2 = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hdevnx" + _DirSeperator + "HATTRME1.DBF", _ziphelper, _DirSeperator);
@@ -1183,7 +1180,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-
             //Infos about Link file hrs\linkhrs.lnk
             //Size of a Structure in the Link File: 512 bytes
             //Offset of Linkfile is in hrs\S7RESOFF.DBF, Filed 12 (RSRVD3_L)
@@ -1193,7 +1189,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             //Create the Link BlocksOfflineFolder Folder with S7ProgrammFolders...
             if (_ziphelper.FileExists(ProjectFolder + "hrs" + _DirSeperator + "linkhrs.lnk"))
             {
-
                 //FileStream hrsLink = new FileStream(ProjectFolder + "hrs" + _DirSeperator + "linkhrs.lnk", FileMode.Open, FileAccess.Read, System.IO.FileShare.ReadWrite);
                 Stream hrsLink = _ziphelper.GetReadStream(ProjectFolder + "hrs" + _DirSeperator + "linkhrs.lnk");
                 BinaryReader rd = new BinaryReader(hrsLink);
@@ -1208,8 +1203,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     hrsLink.Position = x._linkfileoffset;
                     hrsLink.Read(tmpLink, 0, 0x200);
 
-                    int pos1 = tmpLink.IndexOfBytes(new byte[] { 0x01, 0x60, 0x11, 0x00 });
-                    int wrt1 = BitConverter.ToInt16(tmpLink, pos1 + 4);
+                    int pos1 = ASCIIEncoding.ASCII.GetString(tmpLink).IndexOf(ASCIIEncoding.ASCII.GetString(new byte[] { 0x01, 0x60, 0x11, 0x00 }));
+                    int wrt1 = BitConverter.ToInt16(tmpLink, pos1 + 3);
 
                     int pos2 = tmpLink.IndexOfBytes(new byte[] { 0x04, 0x20, 0x11 });
                     int wrt2 = tmpLink[pos2 + 3] * 0x100 + tmpLink[pos2 + 4];
@@ -1239,7 +1234,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             x.SourceFolder = y;
                         }
                     }
-
                 }
                 hrsLink.Close();
             }
@@ -1295,10 +1289,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 foreach (DataRow row in dbfTbl.Rows)
                 {
                     int relID = Convert.ToInt32(row["RELID"]);
-                    if ( relID == 1315837)
+                    if (relID == 1315837)
                     {
                         var dp = DPlist.FirstOrDefault(x => x.id == Convert.ToInt32(row["SOBJID"]));
-                        if ( dp != null)
+                        if (dp != null)
                         {
                             dp.TobjID = Convert.ToInt32(row["TOBJID"]);
                         }
@@ -1314,10 +1308,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
             //remove DP from DPlist to DPFolder
-            foreach(var dp in DPlist)
+            foreach (var dp in DPlist)
             {
                 var dpf = DPFolders.FirstOrDefault(x => x.IdTobjId != null && x.IdTobjId.Any(y => y == dp.TobjID));
-                if ( dpf != null)
+                if (dpf != null)
                 {
                     if (dpf.TobjId == null) dpf.TobjId = new List<int>();
                     dpf.TobjId.Add(dp.addr);
@@ -1330,7 +1324,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             //    if (parent != null) parent.SubModul = cp;
             //}
 
-            try {
+            try
+            {
                 //read IP address from S7Netze\S7NONFGX.tab
                 if (_ziphelper.FileExists(ProjectFolder + "S7Netze" + _DirSeperator + "S7NONFGX.tab"))
                 {
@@ -1373,7 +1368,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                         }
                         else continue;
 
-
                         int pos = indexOfByteArray(completeBuffer, searchName, position, lenStructure);
                         if (pos > 0)
                         {
@@ -1384,7 +1378,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.Name = strName;
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("2 Step7ProjectV5.cs threw exception");
+                            }
                         }
 
                         pos = indexOfByteArray(completeBuffer, startIP, position, lenStructure);
@@ -1402,7 +1398,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.IpAddress = new System.Net.IPAddress(bIP);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("3 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, startMAC, position, lenStructure);
                         if (pos > 0)
@@ -1414,7 +1412,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.Mac = System.Net.NetworkInformation.PhysicalAddress.Parse(strMAC);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("4 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, startMask, position, lenStructure);
                         if (pos > 0)
@@ -1431,7 +1431,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.SubnetMask = new System.Net.IPAddress(bIP);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("5 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, startRouter, position, lenStructure);
                         if (pos > 0)
@@ -1447,7 +1449,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.Router = new System.Net.IPAddress(bIP);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("6 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, startUseRouter, position, lenStructure);
                         if (pos > 0)
@@ -1457,7 +1461,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.UseRouter = Convert.ToBoolean(completeBuffer[pos + 19]);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("7 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, startUseIP, position, lenStructure);
                         if (pos > 0)
@@ -1467,7 +1473,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.UseIp = Convert.ToBoolean(completeBuffer[pos + 19]);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("8 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, startUseMac, position, lenStructure);
                         if (pos > 0)
@@ -1477,7 +1485,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 ethernet.UseIso = Convert.ToBoolean(completeBuffer[pos + 19]);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("9 Step7ProjectV5.cs threw exception");
+                            }
                         }
                     }
                     //read ProfiBus Parametrs
@@ -1490,9 +1500,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                         int number = BitConverter.ToInt32(completeBuffer, position + 4);//or ToInt16
                         var dp = DPFolders.FirstOrDefault(x => x.TobjId != null && x.TobjId.Any(y => y == number));
                         CPUFolder cpu = null;
-                        if ( dp != null)
+                        if (dp != null)
                             cpu = CPUFolders.FirstOrDefault(x => x.UnitID == dp.UnitID);
-                        MpiProfiBusNetworkInterface MpiDP = new MpiProfiBusNetworkInterface() { NetworkInterfaceType = NetworkType.Profibus};
+                        MpiProfiBusNetworkInterface MpiDP = new MpiProfiBusNetworkInterface() { NetworkInterfaceType = NetworkType.Profibus };
                         if (cpu != null)
                         {
                             if (cpu.NetworkInterfaces == null) cpu.NetworkInterfaces = new List<NetworkInterface>();
@@ -1508,7 +1518,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 MpiDP.Address = (int)Convert.ToByte(completeBuffer[pos + 19 + (int)Convert.ToByte(completeBuffer[pos + 8])]);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("10 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, searchName, position, lenStructure);
                         if (pos > 0)
@@ -1520,9 +1532,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 MpiDP.Name = strName;
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("11 Step7ProjectV5.cs threw exception");
+                            }
                         }
-
                     }
                     //read MPI Parametrs
                     startStructure[0] = 0x01;
@@ -1553,7 +1566,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 MpiDP.Address = (int)Convert.ToByte(completeBuffer[pos + 19 + (int)Convert.ToByte(completeBuffer[pos + 8])]);
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("12 Step7ProjectV5.cs threw exception");
+                            }
                         }
                         pos = indexOfByteArray(completeBuffer, searchName, position, lenStructure);
                         if (pos > 0)
@@ -1565,12 +1580,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 MpiDP.Name = strName;
                             }
                             catch
-                            { }
+                            {
+                                Console.WriteLine("13 Step7ProjectV5.cs threw exception");
+                            }
                         }
                     }
                 }
             }
-            catch { }
+            catch
+            {
+                Console.WriteLine("14 Step7ProjectV5.cs threw exception");
+            }
             //union SubModul Cp
             bool repeat;
             do
@@ -1591,6 +1611,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             } while (repeat);
         }
+
         private int indexOfByteArray(byte[] array, byte[] pattern, int offset, int maxLen)
         {
             int success = 0;
@@ -1625,11 +1646,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "YDBs" + _DirSeperator + "YLNKLIST.DBF", _ziphelper, _DirSeperator);
                 foreach (DataRow row in dbfTbl.Rows)
                 {
-                    if (!(bool) row["DELETED_FLAG"])
+                    if (!(bool)row["DELETED_FLAG"])
                     {
-                        if ((int) row["TOI"] == myBlockFolder.ID)
+                        if ((int)row["TOI"] == myBlockFolder.ID)
                         {
-                            tmpId2 = (int) row["SOI"];
+                            tmpId2 = (int)row["SOI"];
                             break;
                         }
                     }
@@ -1638,9 +1659,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 if (tmpId2 == 0 && showDeleted)
                     foreach (DataRow row in dbfTbl.Rows)
                     {
-                        if ((int) row["TOI"] == myBlockFolder.ID)
+                        if ((int)row["TOI"] == myBlockFolder.ID)
                         {
-                            tmpId2 = (int) row["SOI"];
+                            tmpId2 = (int)row["SOI"];
                             retVal.Folder = ProjectFolder + "YDBs" + _DirSeperator + tmpId2.ToString() + _DirSeperator;
                             break;
                         }
@@ -1676,7 +1697,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             return retVal;
         }
 
-
         private class LinkHelp
         {
             public int SOBJID { get; set; }
@@ -1693,14 +1713,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             public int IDM { get; set; }
             public int ATTRIIDM { get; set; }
             public int ATTFORMATM { get; set; }
-            public byte[] MEMOARRAYM { get; set; }          
+            public byte[] MEMOARRAYM { get; set; }
         }
-        
+
         private class DpHelp
         {
             public int id;
             public int addr;
             public int TobjID;
         }
-    }    
+    }
 }

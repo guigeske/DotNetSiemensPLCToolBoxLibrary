@@ -1,10 +1,10 @@
 ﻿/*
  This implements a high level Wrapper between libnodave.dll and applications written
  in MS .Net languages.
- 
+
  This ConnectionLibrary was written by Jochen Kuehner
  * http://jfk-solutuions.de/
- * 
+ *
  * Thanks go to:
  * Steffen Krayer -> For his work on MC7 decoding and the Source for his Decoder
  * Zottel         -> For LibNoDave
@@ -21,23 +21,17 @@
 
  You should have received a copy of the GNU Library General Public License
  along with Libnodave; see the file COPYING.  If not, write to
- the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
+ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-using System;
+
+using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
-using System.Linq;
-using DotNetSiemensPLCToolBoxLibrary.Communication;
-using DotNetSiemensPLCToolBoxLibrary.Communication.LibNoDave;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
-using DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7;
-using DotNetSiemensPLCToolBoxLibrary.General;
-
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks
 {
+    [JsonObject(MemberSerialization.OptIn)]
     public class DataBlockRow : IDataRow, INotifyPropertyChanged
     {
         public static List<DataBlockRow> GetChildrowsAsList(DataBlockRow akRow)
@@ -53,26 +47,33 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks
         public virtual List<IDataRow> Children { get; protected set; }
 
         protected internal S7DataRowType _datatype;
+
         public virtual S7DataRowType DataType
         {
             get { return _datatype; }
             set { _datatype = value; }
         }
 
-
+        [JsonProperty("symbol", Order = 3)]
         public virtual string Name { get; set; }
-        public virtual string FullName { get { return Parent == null ? string.Empty : (Parent.FullName + '.' + Name).Trim('.'); } }
 
+        public virtual string FullName
+        { get { return Parent == null ? string.Empty : (Parent.FullName + '.' + Name).Trim('.'); } }
+
+        [JsonProperty("description", Order = 4)]
         public virtual string Comment { get; set; }
-        public virtual string FullComment { get { return Parent == null ? string.Empty : (Parent.FullComment + '.' + Comment).Trim('.'); } }
+
+        public virtual string FullComment
+        { get { return Parent == null ? string.Empty : (Parent.FullComment + '.' + Comment).Trim('.'); } }
 
         public virtual IDataRow Parent { get; set; }
 
         protected internal ByteBitAddress _BlockAddress;
+
         public virtual ByteBitAddress BlockAddress
         {
             get { return _BlockAddress; }
-            protected set { _BlockAddress = value; }
+            set { _BlockAddress = value; }
         }
 
         public virtual Block CurrentBlock { get; protected set; }
@@ -125,9 +126,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks
         public bool IsArray { get; set; }
 
         public List<int> ArrayStart { get; set; }
-        
+
         public List<int> ArrayStop { get; set; }
-       
+
         public int GetArrayLines()
         {
             int arrcnt = 1;
@@ -141,8 +142,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks
 
         public int DataTypeBlockNumber { get; set; } //When the Type is SFB, FB or UDT, this contains the Number!
 
-        public int StringSize { get; set; } //Only Relevant for String     
+        public int StringSize { get; set; } //Only Relevant for String
 
+        [JsonProperty("datatype", Order = 2)]
         public virtual string DataTypeAsString
         {
             get
@@ -169,7 +171,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks
                 else if (DataType == S7DataRowType.MultiInst_SFB)
                     retVal += "SFB" + DataTypeBlockNumber.ToString();
                 else
-                    retVal += DataType.ToString(); 
+                    retVal += DataType.ToString();
 
                 //in case of Block types, add the actual Block number as well
                 if (DataType == S7DataRowType.FB || DataType == S7DataRowType.UDT || DataType == S7DataRowType.SFB)

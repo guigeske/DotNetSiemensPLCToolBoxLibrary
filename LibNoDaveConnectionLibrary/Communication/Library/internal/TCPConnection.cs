@@ -31,12 +31,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.Communication.Library
         private SynchronizationContext context;
 
         public delegate void TegramRecievedEventHandler(byte[] telegramm);
+
         public event TegramRecievedEventHandler TelegrammRecievedSend;
 
         public delegate void ConnectionEstablishedEventHandler(int Number);
+
         public event ConnectionEstablishedEventHandler ConnectionEstablished;
 
         public delegate void ConnectionClosedEventHandler(int Number);
+
         public event ConnectionClosedEventHandler ConnectionClosed;
 
         private List<Thread> Threads = new List<Thread>();
@@ -48,7 +51,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Communication.Library
             if (context == null)
                 this.context = new SynchronizationContext();
             this.connection_port = send_connection_port;
-
         }
 
         public void Connect()
@@ -62,9 +64,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Communication.Library
             send_wait_for_conn_thread.Name = "send_wait_for_conn_thread";
             send_wait_for_conn_thread.Start();
             Threads.Add(send_wait_for_conn_thread);
-
         }
-
 
         public void SendData(string telegramm)
         {
@@ -114,16 +114,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.Communication.Library
                         ReceiveDataSendClientThread.Start();
                         Threads.Add(ReceiveDataSendClientThread);
                         //End Thread
-
                     }
                     Thread.Sleep(1000);
                 }
                 catch (ThreadAbortException)
                 {
+                    Console.WriteLine("1 TCPConnection.cs threw exception");
                     return;
                 }
                 catch
                 {
+                    Console.WriteLine("2 TCPConnection.cs threw exception");
                     Thread.Sleep(5000);
                 }
             }
@@ -158,6 +159,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Communication.Library
                     }
                     catch (Exception)
                     {
+                        Console.WriteLine("3 TCPConnection.cs threw exception");
                         if (stream != null)
                         {
                             stream.Dispose();
@@ -168,6 +170,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Communication.Library
             }
             catch (ThreadAbortException) //Kill this Thread when a Exception occurs!
             {
+                Console.WriteLine("4 TCPConnection.cs threw exception");
                 if (stream != null)
                 {
                     stream.Dispose();

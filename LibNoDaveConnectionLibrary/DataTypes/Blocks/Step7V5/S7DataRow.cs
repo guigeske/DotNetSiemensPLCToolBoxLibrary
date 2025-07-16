@@ -1,10 +1,10 @@
 ﻿/*
  This implements a high level Wrapper between libnodave.dll and applications written
  in MS .Net languages.
- 
+
  This ConnectionLibrary was written by Jochen Kuehner
  * http://jfk-solutuions.de/
- * 
+ *
  * Thanks go to:
  * Steffen Krayer -> For his work on MC7 decoding and the Source for his Decoder
  * Zottel         -> For LibNoDave
@@ -21,16 +21,19 @@
 
  You should have received a copy of the GNU Library General Public License
  along with Libnodave; see the file COPYING.  If not, write to
- the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  
+ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
+
+using DotNetSiemensPLCToolBoxLibrary.Communication;
+using DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using DotNetSiemensPLCToolBoxLibrary.Communication;
-using DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
 {
+    [JsonObject(MemberSerialization.OptIn)]
     public class S7DataRow : TiaAndSTep7DataBlockRow
     {
         public IEnumerable<String> Dependencies
@@ -48,14 +51,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                     var retVal = new List<String>();
                     foreach (var s7DataRow in Children)
                     {
-                        retVal.AddRange(((S7DataRow) s7DataRow).Dependencies);
+                        retVal.AddRange(((S7DataRow)s7DataRow).Dependencies);
                     }
                     return retVal;
                 }
                 return new List<String>();
             }
         }
-       
+
         public S7DataRow(string name, S7DataRowType datatype, Block plcblock)
         {
             this.CurrentBlock = plcblock;
@@ -84,9 +87,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             newRow.isInOut = this.isInOut;
             newRow.isRootBlock = this.isRootBlock;
             newRow.Value = this.Value;
-            
 
-            if (Children!=null)
+            if (Children != null)
                 foreach (S7DataRow plcDataRow in Children)
                 {
                     TiaAndSTep7DataBlockRow copy = plcDataRow.DeepCopy();
@@ -94,11 +96,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                     newRow.Add(copy);
                 }
 
-            return newRow;   
+            return newRow;
         }
-        
+
         public bool isRootBlock { get; set; }
-        
+
         public override S7DataRowType DataType
         {
             get { return _datatype; }
@@ -111,55 +113,66 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 this.OnPropertyChanged("DataType");
             }
         }
-        
+
         private PLCTag _plctag;
+
         public PLCTag PlcTag
         {
             get
             {
                 if (_plctag != null)
-                    return _plctag;               
-                    _plctag = new PLCTag() { DataBlockNumber = BaseBlockNumber, TagDataSource = MemoryArea.Datablock, ByteAddress = BlockAddress.ByteAddress };
+                    return _plctag;
+                _plctag = new PLCTag() { DataBlockNumber = BaseBlockNumber, TagDataSource = MemoryArea.Datablock, ByteAddress = BlockAddress.ByteAddress };
 
                 switch (DataType)
                 {
-
                     case S7DataRowType.BOOL:
                         _plctag.TagDataType = TagDataType.Bool;
                         _plctag.BitAddress = BlockAddress.BitAddress;
                         break;
+
                     case S7DataRowType.BYTE:
                         _plctag.TagDataType = TagDataType.Byte;
                         break;
+
                     case S7DataRowType.WORD:
-                        _plctag.TagDataType = TagDataType.Word;                        
+                        _plctag.TagDataType = TagDataType.Word;
                         break;
+
                     case S7DataRowType.DWORD:
                         _plctag.TagDataType = TagDataType.Dword;
                         break;
+
                     case S7DataRowType.INT:
                         _plctag.TagDataType = TagDataType.Int;
                         break;
+
                     case S7DataRowType.DINT:
                         _plctag.TagDataType = TagDataType.Dint;
                         break;
+
                     case S7DataRowType.REAL:
                         _plctag.TagDataType = TagDataType.Float;
                         break;
+
                     case S7DataRowType.TIME:
                         _plctag.TagDataType = TagDataType.Time;
                         break;
+
                     case S7DataRowType.DATE_AND_TIME:
                         _plctag.TagDataType = TagDataType.DateTime;
                         break;
+
                     case S7DataRowType.CHAR:
                         _plctag.TagDataType = TagDataType.CharArray;
                         _plctag.ArraySize = this.GetArrayLines();
                         break;
+
                     case S7DataRowType.STRING:
                         _plctag.TagDataType = TagDataType.String;
                         _plctag.ArraySize = this.StringSize;
                         break;
+
                     default:
                         _plctag = null;
                         return null;
@@ -167,7 +180,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 //_LibNoDaveValue.PropertyChanged += new PropertyChangedEventHandler(_LibNoDaveValue_PropertyChanged);
                 OnPropertyChanged("LibNoDaveValue");
                 return _plctag;
-            }           
+            }
         }
 
         public string GetSymbolicAddress()
@@ -176,12 +189,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             {
                 case S7DataRowType.BOOL:
                     return "X" + BlockAddress.ToString();
+
                 case S7DataRowType.WORD:
                 case S7DataRowType.INT:
                 case S7DataRowType.S5TIME:
                 case S7DataRowType.DATE:
                     return "W" + BlockAddress.ByteAddress.ToString();
                     break;
+
                 case S7DataRowType.DWORD:
                 case S7DataRowType.DINT:
                 case S7DataRowType.REAL:
@@ -189,27 +204,26 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 case S7DataRowType.TIME_OF_DAY:
                     return "D" + BlockAddress.ByteAddress.ToString();
                     break;
+
                 case S7DataRowType.CHAR:
                 case S7DataRowType.BYTE:
                     return "B" + BlockAddress.ByteAddress.ToString();
                     break;
+
                 default:
                     return null;
             }
         }
 
-
-        void _LibNoDaveValue_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void _LibNoDaveValue_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged("LibNoDaveValue");
         }
 
         public List<Step7Attribute> Attributes { get; set; }
 
-
         //Contains the Length of a Structure or UDT...
         //private int _structLength = 0;
-
         public override ByteBitAddress BlockAddress
         {
             get
@@ -219,11 +233,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 if (this.PlcBlock is Step5.S5DataBlock && _BlockAddress != null)
                     return new ByteBitAddress(_BlockAddress.ByteAddress / 2, _BlockAddress.BitAddress);
                 return new ByteBitAddress(_BlockAddress);
-                
             }
         }
-        
+
         private ByteBitAddress _parentOldAddress;
+
         internal override ByteBitAddress FillBlockAddresses(ByteBitAddress startAddr)
         {
             if (isRootBlock && this.Name == "TEMP")
@@ -239,10 +253,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             {
                 //Create a function wich fills in the Block address for all Subitems...
                 if (Children != null || _datatype != S7DataRowType.STRUCT)
-                {                    
+                {
                     if (akAddr.BitAddress != 0)
                         akAddr.ByteAddress++;
-                    if (akAddr.ByteAddress%2 != 0)
+                    if (akAddr.ByteAddress % 2 != 0)
                         akAddr.ByteAddress++;
 
                     bool lastRowWasArrayOrStruct = false;
@@ -250,7 +264,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                     //int structlen = 0;
                     foreach (S7DataRow plcDataRow in Children)
                     {
-
                         if (akAddr.BitAddress != 0 && plcDataRow._datatype == S7DataRowType.BOOL && plcDataRow.WasArray && !plcDataRow.WasFirstInArray && plcDataRow.WasNextHigherIndex)
                         {
                             akAddr.BitAddress = 0;
@@ -262,20 +275,18 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                             akAddr.ByteAddress++;
                         }
 
-                        
                         if (akAddr.ByteAddress % 2 != 0 && ((plcDataRow._datatype != S7DataRowType.BOOL && plcDataRow._datatype != S7DataRowType.BYTE && plcDataRow._datatype != S7DataRowType.CHAR) || plcDataRow.IsArray || plcDataRow.WasFirstInArray || (lastRowWasArrayOrStruct && !plcDataRow.WasArray && !plcDataRow.WasFirstInArray)))
                             if (!(this.PlcBlock is Step5.S5DataBlock))
                             {
                                 akAddr.ByteAddress++;
                             }
-                        
-                        
+
                         if (plcDataRow.Children != null && plcDataRow.Children.Count > 0)
                         {
                             plcDataRow._BlockAddress = new ByteBitAddress(akAddr);
 
                             var useAddr = akAddr;
-                            if (plcDataRow.Parent != null && ((S7DataRow) plcDataRow.Parent).isInOut)
+                            if (plcDataRow.Parent != null && ((S7DataRow)plcDataRow.Parent).isInOut)
                                 useAddr = new ByteBitAddress(0, 0);
                             plcDataRow.FillBlockAddresses(useAddr);
 
@@ -291,7 +302,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                                 akAddr.BitAddress = 0;
                                 akAddr.ByteAddress++;
                             }
-                            if (akAddr.ByteAddress%2 != 0)
+                            if (akAddr.ByteAddress % 2 != 0)
                                 akAddr.ByteAddress++;
 
                             plcDataRow._NextBlockAddress = new ByteBitAddress(akAddr);
@@ -330,7 +341,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 _parentOldAddress = null;
                 //_structureLength = null;
 
-                if (Children!=null)
+                if (Children != null)
                     foreach (S7DataRow plcDataRow in Children)
                     {
                         plcDataRow.ClearBlockAddress();
@@ -377,8 +388,20 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
         }
 
-       
         public override IDataRow Parent { get; set; }
+
+        [JsonProperty(Order = 1000, NullValueHandling = NullValueHandling.Ignore)]
+        public List<IDataRow> Childre
+        {
+            get
+            {
+                return _children;
+            }
+            set
+            {
+                _children = value;
+            }
+        }
 
         public override List<IDataRow> Children
         {
@@ -389,7 +412,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 return _children;
             }
         }
-        
+
         public static List<PLCTag> GetLibnoDaveValues(List<S7DataRow> rowList)
         {
             List<PLCTag> retVal = new List<PLCTag>();
@@ -400,6 +423,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             }
             return retVal;
         }
+
         /*
         internal static List<PLCDataRow> _GetRowsAsList(PLCDataRow currRow)
         {
@@ -411,8 +435,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             return retVal;
         }
         */
-
-     
 
         //This List contains the orginal Structure, if the Block has a TimeStamp Conflict!
         public IList<S7DataRow> OrginalChildren { get; set; }
@@ -428,15 +450,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
             {
                 return isRootBlock ? null : Name;
             }
-            var pcs = ((S7DataRow) Parent).GetCallingString();
+            var pcs = ((S7DataRow)Parent).GetCallingString();
             if (isRootBlock) return pcs;
-            return (pcs==null?"":pcs+".") + Name;
+            return (pcs == null ? "" : pcs + ".") + Name;
         }
 
         public override string ToString()
         {
             return ToString("");
-        }    
+        }
 
         public string ToString(string spacer)
         {
@@ -447,18 +469,18 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
 
             retVal += spacer + Name;
 
-            if (Attributes!=null)
+            if (Attributes != null)
             {
                 retVal += "{";
                 foreach (Step7Attribute step7Attribute in Attributes)
                 {
                     if (Attributes.IndexOf(step7Attribute) != 0) retVal += "; ";
-                    retVal += step7Attribute.Name + "=" + "'" + step7Attribute.Value.Replace("$","$$").Replace("'","$'") + "'";                  
+                    retVal += step7Attribute.Name + "=" + "'" + step7Attribute.Value.Replace("$", "$$").Replace("'", "$'") + "'";
                 }
                 retVal += "}";
-            }                                
-                
-            retVal+= ": ";
+            }
+
+            retVal += ": ";
 
             /*
             if (IsArray)
@@ -493,7 +515,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                 foreach (S7DataRow plcDataRow in Children)
                 {
                     retVal += plcDataRow.ToString("\t" + spacer);
-
                 }
             return retVal;
         }

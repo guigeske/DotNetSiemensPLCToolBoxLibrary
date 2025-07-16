@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5;
+﻿using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step5;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5;
 using DotNetSiemensPLCToolBoxLibrary.Projectfiles;
+using NLog;
+using System;
+using System.Collections.Generic;
 
 namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders
 {
@@ -12,7 +12,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders
     /// </summary>
     public class ProjectFolder : ProjectItem, IProjectFolder
     {
-#if !IPHONE	
+#if !IPHONE
+
+        internal static Logger logger = LogManager.GetCurrentClassLogger();
         public string FolderClosedImageName
         {
             get
@@ -20,22 +22,22 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders
                 if (this is StationConfigurationFolder)
                 {
                     if (((StationConfigurationFolder)this).StationType == PLCType.Simatic300)
-                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_300_rack.ico"; 
+                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_300_rack.ico";
                     else if (((StationConfigurationFolder)this).StationType == PLCType.Simatic400 || ((StationConfigurationFolder)this).StationType == PLCType.Simatic400H)
-                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_400_rack.ico"; 
+                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_400_rack.ico";
                 }
                 else if (this is CPUFolder)
                 {
                     if (((CPUFolder)this).CpuType == PLCType.Simatic300)
-                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_300.ico"; 
+                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_300.ico";
                     else if (((CPUFolder)this).CpuType == PLCType.Simatic400 || ((CPUFolder)this).CpuType == PLCType.Simatic400H)
-                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_400.ico"; 
+                        return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s7_400.ico";
                 }
                 else if (this is Step5ProgrammFolder)
                 {
                     return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.s5.ico";
                 }
-                return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.closed_folder.ico";             
+                return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.closed_folder.ico";
             }
         }
 
@@ -59,6 +61,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders
                 return "DotNetSiemensPLCToolBoxLibrary.Resources.FolderImages.opened_folder.ico";
             }
         }
+
         /*public Image FolderOpenedImage
         {
             get
@@ -96,7 +99,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders
         //Only for internal use.
         internal int ID;
 
-        
+        public virtual void ExportSystemBlocks()
+        { }
+
+        public virtual void ExportTextList()
+        { }
+
         public ProjectFolder()
         {
             SubItems = new List<ProjectFolder>();
