@@ -86,7 +86,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
             {
                 get { return this.plcBlock.ToString().Contains("InstanceDB"); }
             }
-            }
 
             internal TIAOpennessProjectBlockInfo(PlcBlock plcBlock)
             {
@@ -451,7 +450,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
             //    plcSoftware.BlockGroup.Blocks.Import(file, overwrite ? ImportOptions.Override : ImportOptions.None);
             //}
 
-            internal PlcSoftware plcSoftware;
 
             public TIAOpennessProgramFolder ProgramFolder { get; set; }
             public TIAOpennessPlcDatatypeFolder PlcDatatypeFolder { get; set; }
@@ -1347,8 +1345,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
 
             foreach (var d in tiapProject.Devices)
             {
-                if (d.TypeIdentifier != null && (d.TypeIdentifier.EndsWith(".S71500") || d.TypeIdentifier.EndsWith("ET200SP_OC")))
-                {
                 foreach (DeviceItem deviceItem in d.DeviceItems)
                 {
                     var target = (

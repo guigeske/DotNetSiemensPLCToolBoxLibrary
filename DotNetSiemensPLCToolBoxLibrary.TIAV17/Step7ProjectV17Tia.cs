@@ -88,7 +88,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V17
             {
                 get { return this.plcBlock.ToString().Contains("InstanceDB"); }
             }
-            }
+            
 
             internal TIAOpennessProjectBlockInfo(PlcBlock plcBlock)
             {
@@ -254,7 +254,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V17
             public override PLCLanguage BlockLanguage
             {
                 get { return PLCLanguage.DB; }
-            }
             }
 
             public override string Export(ExportFormat exportFormat)
@@ -1336,8 +1335,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V17
 
             foreach (var d in tiapProject.Devices)
             {
-                if (d.TypeIdentifier != null && (d.TypeIdentifier.EndsWith(".S71500") || d.TypeIdentifier.EndsWith("ET200SP_OC")))
-                {
                 foreach (DeviceItem deviceItem in d.DeviceItems)
                 {
                     var target = (

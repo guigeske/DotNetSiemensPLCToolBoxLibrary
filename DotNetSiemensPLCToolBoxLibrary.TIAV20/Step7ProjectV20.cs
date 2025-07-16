@@ -32,7 +32,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.AssemblyResolve += currentDomain_AssemblyResolve;
 
-            AskForInstance();
+            AksForInstance();
 
             LoadViaOpennessDlls();
 
@@ -68,7 +68,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
             this.ProjectFile = process.ProjectPath.ToString();
         }
 
-        private void AskForInstance()
+        private void AksForInstance()
         {
 
             tiaPortal = new Siemens.Engineering.TiaPortal(Siemens.Engineering.TiaPortalMode.WithoutUserInterface);
@@ -179,6 +179,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
 
         private object tiaExport;
         private Type tiaExportType;
+
+
+        //internal Dictionary<TiaObjectId, TiaFileObject> TiaObjects = new Dictionary<TiaObjectId, TiaFileObject>();
 
         public override ProjectType ProjectType
         {

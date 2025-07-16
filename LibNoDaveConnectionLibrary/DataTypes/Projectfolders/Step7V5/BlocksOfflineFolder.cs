@@ -627,7 +627,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                     retVal.Author = myTmpBlk.username;
                     retVal.Version = myTmpBlk.version;
 
-                    retVal.Parameter = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref ParaList, blkInfo.BlockType, false, this, retVal);
+                    if (myConvOpt.CheckForInterfaceTimestampConflicts && S7Block.HasTimestampConflict(retVal.LastInterfaceChange, retVal.LastInterfaceChangeHistory))
+                    {
+                        retVal.Parameter = GetInterfaceStructureFromMC7(blkInfo, myTmpBlk, retVal, ref ParaList);
+                    }
+                    else
+                    {
+                        retVal.Parameter = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref ParaList, blkInfo.BlockType, false, this, retVal, myConvOpt);
+                    }
 
                     byte[] desc = myTmpBlk.blockdescription;
 

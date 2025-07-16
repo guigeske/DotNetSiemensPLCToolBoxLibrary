@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using DataCollectorConnect.Models.Standard;
 using DataCollectorConnect.Models.Standard.Siemens;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks;
@@ -18,7 +16,6 @@ using DotNetSiemensPLCToolBoxLibrary.Projectfiles.TIA.Openness;
 using NLog;
 using Siemens.Engineering;
 using Siemens.Engineering.Compiler;
-using Siemens.Engineering.HmiUnified.HmiTags;
 using Siemens.Engineering.HW;
 using Siemens.Engineering.HW.Features;
 using Siemens.Engineering.SW;
@@ -27,13 +24,7 @@ using Siemens.Engineering.SW.Blocks;
 using Siemens.Engineering.SW.Supervision;
 using Siemens.Engineering.SW.Tags;
 using Siemens.Engineering.SW.Types;
-using Siemens.Engineering.SW.Tags;
-using DotNetSiemensPLCToolBoxLibrary.General;
-using System.Text.RegularExpressions;
-using Siemens.Engineering.Compiler;
 using Siemens.Engineering.SW.WatchAndForceTables;
-using DotNetSiemensPLCToolBoxLibrary.Projectfiles.TIA.Openness;
-using Siemens.Engineering.SW.Alarm;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
 {
@@ -87,7 +78,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
             public override bool IsInstance
             {
                 get { return this.plcBlock.ToString().Contains("InstanceDB"); }
-            }
             }
 
             internal TIAOpennessProjectBlockInfo(PlcBlock plcBlock)
@@ -254,7 +244,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
             public override PLCLanguage BlockLanguage
             {
                 get { return PLCLanguage.DB; }
-            }
             }
 
             public override string Export(ExportFormat exportFormat)
@@ -454,7 +443,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
             //    plcSoftware.BlockGroup.Blocks.Import(file, overwrite ? ImportOptions.Override : ImportOptions.None);
             //}
 
-            internal PlcSoftware plcSoftware;
 
             public TIAOpennessProgramFolder ProgramFolder { get; set; }
             public TIAOpennessPlcDatatypeFolder PlcDatatypeFolder { get; set; }
