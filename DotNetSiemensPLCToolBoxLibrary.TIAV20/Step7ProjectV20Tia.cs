@@ -1560,7 +1560,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
                 unit.BlockGroup
             )
             {
-                Name = unit.Name + "/software",
+                Name = unit.Name + "\\software",
                 Parent = parent,
             };
             parent.ProgramFolder = fld;
@@ -1573,7 +1573,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
             var fld2 = new TIAOpennessPlcDatatypeFolder(this, parent, t.Types, t)
             {
                 //TiaPortalItem = controller.ControllerDatatypeFolder,
-                Name = unit.Name + "/data types",
+                Name = unit.Name + "\\data types",
                 Parent = parent,
             };
             parent.PlcDatatypeFolder = fld2;
@@ -1582,7 +1582,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
 
             var fld3 = new TIAOpennessVariablesFolder(this, parent, unit.TagTableGroup)
             {
-                Name = unit.Name + "/variables",
+                Name = unit.Name + "\\variables",
                 Parent = parent,
             };
             parent.VarTabFolder = fld3;

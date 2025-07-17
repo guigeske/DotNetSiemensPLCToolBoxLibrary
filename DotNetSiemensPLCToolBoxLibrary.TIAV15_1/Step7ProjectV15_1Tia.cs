@@ -1446,56 +1446,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V15_1
                 fld4,
                 software.WatchAndForceTableGroup
             );
-
-            var units = software.GetService<PlcUnitProvider>().UnitGroup.Units;
-            foreach (var unit in units)
-            {
-                LoadSoftwareUnitViaOpennessDlls(parent, unit);
-            }
         }
 
-        internal void LoadSoftwareUnitViaOpennessDlls(
-            TIAOpennessControllerFolder parent,
-            Siemens.Engineering.SW.Units.PlcUnit unit
-        )
-        {
-
-            var fld = new TIAOpennessProgramFolder(
-                this,
-                parent,
-                unit.BlockGroup.Blocks,
-                unit.BlockGroup
-            )
-            {
-                Name = unit.Name + "/software",
-                Parent = parent,
-            };
-            parent.ProgramFolder = fld;
-            parent.SubItems.Add(fld);
-
-            LoadSubProgramBlocksFoldersViaOpennessDlls(fld, unit.BlockGroup);
-
-            var t = (PlcTypeGroup)unit.TypeGroup;
-
-            var fld2 = new TIAOpennessPlcDatatypeFolder(this, parent, t.Types, t)
-            {
-                //TiaPortalItem = controller.ControllerDatatypeFolder,
-                Name = unit.Name + "/data types",
-                Parent = parent,
-            };
-            parent.PlcDatatypeFolder = fld2;
-            parent.SubItems.Add(fld2);
-            LoadSubPlcDatatypeFoldersViaOpennessDlls(fld2, unit.TypeGroup);
-
-            var fld3 = new TIAOpennessVariablesFolder(this, parent, unit.TagTableGroup)
-            {
-                Name = unit.Name + "/variables",
-                Parent = parent,
-            };
-            parent.VarTabFolder = fld3;
-            parent.SubItems.Add(fld3);
-            LoadSubVartabFoldersViaOpennessDlls(fld3, unit.TagTableGroup);
-        }
 
         internal void LoadSubProgramBlocksFoldersViaOpennessDlls(
             TIAOpennessProgramFolder parent,
