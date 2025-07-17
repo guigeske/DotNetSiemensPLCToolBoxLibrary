@@ -57,8 +57,13 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
         {
             get
             {
-                if (StructureFromString != null)
+                bool checkIFaceConflict = usedS7ConvertingOptions != null && usedS7ConvertingOptions.CheckForInterfaceTimestampConflicts;
+
+                if ((!checkIFaceConflict && StructureFromString != null) || (checkIFaceConflict && !HasTimestampConflict(LastInterfaceChange, LastInterfaceChangeHistory)))
+                {
                     return StructureFromString;
+                }
+
                 return StructureFromMC7;
             }
             set

@@ -4,6 +4,7 @@
     <TargetFramework>net481</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <StartupObject>TestVB.Form1</StartupObject>
+	  <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibNoDaveConnectionLibrary.WinForms\DotNetSiemensPLCToolBoxLibrary.WinForms.csproj" />

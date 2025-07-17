@@ -33,6 +33,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 if (string.IsNullOrEmpty(_projectfilename))
                     throw new Exception("Zip-File contains no valid Step5 Project !");
             }
+            else
+            {
+                this._ziphelper = new ZipHelper(filename);
+            }
 
             ProjectFile = filename;
 

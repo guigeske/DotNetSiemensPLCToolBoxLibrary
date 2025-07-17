@@ -14,8 +14,12 @@ using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V11;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using DotNetSiemensPLCToolBoxLibrary.General;
 using DotNetSiemensPLCToolBoxLibrary.Projectfiles;
+using ICSharpCode.SharpZipLib.Core;
+using OfficeOpenXml;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
 using TiaGitHandler.Properties;
 using Application = System.Windows.Application;
+using InvalidOperationException = System.InvalidOperationException;
 using MessageBox = System.Windows.Forms.MessageBox;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
@@ -56,7 +60,7 @@ namespace TiaGitHandler
         {
             bool hasArgs = args.Count() > 0;
             string file = "";
-            string exportPath = "";
+            string exportPath = Environment.CurrentDirectory;
             string user = Settings.Default.DefaultUser;
             string password = Settings.Default.DefaultPassword;
             bool attach = false;
@@ -80,7 +84,7 @@ namespace TiaGitHandler
                 if (object.Equals(res, false))
                 {
                     OpenFileDialog op = new OpenFileDialog();
-                    op.Filter = "TIA-Portal Project|*.ap13;*.ap14;*.ap15;*.ap15_1;*.ap16";
+                    op.Filter = "TIA-Portal Project|*.ap13;*.ap14;*.ap15;*.ap15_1;*.ap16;*.ap17;*.ap18;*.ap19;*.ap20";
                     op.CheckFileExists = false;
                     op.ValidateNames = false;
                     var ret = op.ShowDialog();
@@ -92,6 +96,23 @@ namespace TiaGitHandler
                     {
                         Console.WriteLine("Bitte S7 projekt als Parameter angeben!");
                         return;
+                    }
+                    var version = file.Substring(file.Length - 2, 2) + ".0";
+                    try
+                    {
+                        TiaOpennessWhitelist.EnsureWhitelistEntry(version);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Console.WriteLine($"Cannot set TIA whitelist registry entry: {ex.Message}");
+                    }
+                    catch (SecurityException ex)
+                    {
+                        Console.WriteLine($"Security exception cannot set TIA whitelist registry entry: {ex.Message}");
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Console.WriteLine($"Unauthorized access exception cannot set TIA whitelist registry entry: {ex.Message}");
                     }
 
                     if (Path.GetExtension(file) == ".ap15_1" || Path.GetExtension(file) == ".ap16")
@@ -117,16 +138,33 @@ namespace TiaGitHandler
                     }
 
                     exportPath = Path.GetDirectoryName(file);
-                    exportPath = Path.GetFullPath(Path.Combine(exportPath, "..\\Export"));
+                    exportPath = Path.GetFullPath(Path.Combine(exportPath, "..\\out\\Export"));
 
                 }
                 else if (res != null)
                 {
                     var ver = ask.Result as string;
-                    prj = Projects.AttachProject(ver);
+                   
+                    try
+                    {
+                        TiaOpennessWhitelist.EnsureWhitelistEntry(ver + ".0");
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Console.WriteLine($"Cannot set TIA whitelist registry entry: {ex.Message}");
+                    }
+                    catch (SecurityException ex)
+                    {
+                        Console.WriteLine($"Authorization context to low cannot set TIA whitelist registry entry: {ex.Message}");
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        Console.WriteLine($"Unauthorized access exception cannot set TIA whitelist registry entry: {ex.Message}");
+                    }
 
+                    prj = Projects.AttachProject(ver);
                     exportPath = Path.GetDirectoryName(prj.ProjectFile);
-                    exportPath = Path.GetFullPath(Path.Combine(exportPath, "..\\Export"));
+                    exportPath = Path.GetFullPath(Path.Combine(exportPath, "..\\out\\Export"));
                 }
                 else
                 {
@@ -162,6 +200,9 @@ namespace TiaGitHandler
                     user = args[3];
                 if (args.Length > 4)
                     password = args[4];
+                if (args.Length > 5)
+                    exportPath = args[5];
+
             }
 
             if (prj == null)
@@ -176,12 +217,45 @@ namespace TiaGitHandler
                     }
                 }
 
+                var version = file.Substring(file.Length - 2, 2) + ".0";
+
+                try
+                {
+                    TiaOpennessWhitelist.EnsureWhitelistEntry(version);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine($"Cannot set TIA whitelist registry entry: {ex.Message}");
+                }
+                catch (SecurityException ex)
+                {
+                    Console.WriteLine($"Security exception cannot set TIA whitelist registry entry: {ex.Message}");
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Console.WriteLine($"Unauthorized access exception cannot set TIA whitelist registry entry: {ex.Message}");
+                }
+
+
                 if (attach)
                 {
-                    if (file.EndsWith("16"))
+                    if (file.EndsWith("20"))
+                        prj = Projects.AttachToInstanceWithFilename("20", file);
+                    else if (file.EndsWith("19"))
+                        prj = Projects.AttachToInstanceWithFilename("19", file);
+                    else if (file.EndsWith("18"))
+                        prj = Projects.AttachToInstanceWithFilename("18", file);
+                    else if (file.EndsWith("17"))
+                        prj = Projects.AttachToInstanceWithFilename("17", file);
+                    else if (file.EndsWith("16"))
                         prj = Projects.AttachToInstanceWithFilename("16", file);
-                    else
+                    else if (file.EndsWith("15.1"))
                         prj = Projects.AttachToInstanceWithFilename("15.1", file);
+                    else
+                    {
+                        Console.WriteLine("Attach to this TIA Version not supported");
+                        Environment.Exit(-1);
+                    }
                 }
                 else
                 {
@@ -198,15 +272,79 @@ namespace TiaGitHandler
             Console.WriteLine();
             List<string> skippedBlocksList = new List<string>();
             ParseFolder(prj.ProjectStructure, exportPath, skippedBlocksList);
+            prj.ExportTextlists(prj.ProjectStructure, exportPath);
 
+            var xlsxFiles = Directory.GetFiles(exportPath, "*.xlsx", SearchOption.AllDirectories);
+            foreach (var xlsxFile in xlsxFiles.Where(x => x.Contains("plcalarmtextlistgroup")))
+            {
+                var fileInfo = new FileInfo(xlsxFile);
+                using (var package = new ExcelPackage(fileInfo))
+                {
+                    var worksheet1 = package.Workbook.Worksheets[1];
+                    var textlistType = worksheet1.Cells["B2"].Text; // textlist type - decimal, binary, bit
+
+                    string targetFile = Path.Combine(
+                        Path.GetDirectoryName(xlsxFile),
+                        $"{Path.GetFileNameWithoutExtension(xlsxFile)}_{textlistType}.csv"
+                    );
+
+                    ConvertPlcAlarmTextListXlsxToCsv(xlsxFile, targetFile, textlistType);
+                }
+
+                File.Delete(xlsxFile);
+            }
+            
             Console.WriteLine();
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Red;
             skippedBlocksList.ForEach(i => Console.WriteLine("{0}", i));
             Console.WriteLine();
             Console.WriteLine(skippedBlocksList.Count() + " blocks were skipped");
+
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Export finished!");
+
             if (!hasArgs)
                 Console.ReadKey();
+        }
+
+        public static void ConvertPlcAlarmTextListXlsxToCsv(string sourceFile, string targetFile, string textlistType)
+        {
+            var fileInfo = new FileInfo(sourceFile);
+            using (var package = new ExcelPackage(fileInfo))
+            {
+                var worksheet = package.Workbook.Worksheets[2];
+
+                var maxColumnNumber = worksheet.Dimension.End.Column;
+                var totalRowCount = worksheet.Dimension.End.Row;
+
+                using (var writer = new StreamWriter(targetFile, false, new UTF8Encoding(false)))
+                {
+                    for (int row = 1; row <= totalRowCount; row++)
+                    {
+                        var currentRow = new List<string>(maxColumnNumber);
+
+                        for (int col = 1; col <= maxColumnNumber; col++)
+                        {
+                            var cellValue = worksheet.Cells[row, col].Text;
+
+                            // double quotation marks (") -> ("")
+                            if (cellValue.Contains("\""))
+                                cellValue = cellValue.Replace("\"", "\"\"");
+
+                            // Add quotation marks if cell contains commas or quotation marks
+                            if (cellValue.Contains(",") || cellValue.Contains("\""))
+                                cellValue = $"\"{cellValue}\"";
+
+                            currentRow.Add(cellValue);
+                        }
+
+                        writer.WriteLine(string.Join(";", currentRow));
+                    }
+                }
+            }
         }
 
         private class EncodingStringWriter : StringWriter
@@ -326,6 +464,10 @@ namespace TiaGitHandler
                             XmlNamespaceManager ns = new XmlNamespaceManager(xmlDoc.NameTable);
                             ns.AddNamespace("smns", "http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v3");
                             ns.AddNamespace("smns2", "http://www.siemens.com/automation/Openness/SW/Interface/v3");
+                            ns.AddNamespace("smns3", "http://www.siemens.com/automation/Openness/SW/NetworkSource/StatementList/v3");
+                            ns.AddNamespace("smns4", "http://www.siemens.com/automation/Openness/SW/NetworkSource/StructuredText/v2");
+                            ns.AddNamespace("smns5", "http://www.siemens.com/automation/Openness/SW/NetworkSource/StructuredText/v4");
+                            ns.AddNamespace("smns6", "http://www.siemens.com/automation/Openness/SW/NetworkSource/StatementList/v5");
 
                             try
                             {
@@ -428,9 +570,58 @@ namespace TiaGitHandler
                                 catch
                                 {
                                 }
+
                                 try
                                 {
                                     var nodes = xmlDoc.SelectNodes("//smns:DateAttribute[@Name='ParameterModifiedTS']", ns);
+                                    foreach (var node in nodes.Cast<XmlNode>())
+                                    {
+                                        node.ParentNode.RemoveChild(node);
+                                    }
+                                }
+                                catch
+                                {
+                                }
+
+                                try
+                                {
+                                    var nodes = xmlDoc.SelectNodes("//smns3:DateAttribute[@Name='ParameterModifiedTS']", ns);
+                                    foreach (var node in nodes.Cast<XmlNode>())
+                                    {
+                                        node.ParentNode.RemoveChild(node);
+                                    }
+                                }
+                                catch
+                                {
+                                }
+
+                                try
+                                {
+                                    var nodes = xmlDoc.SelectNodes("//smns4:DateAttribute[@Name='ParameterModifiedTS']", ns);
+                                    foreach (var node in nodes.Cast<XmlNode>())
+                                    {
+                                        node.ParentNode.RemoveChild(node);
+                                    }
+                                }
+                                catch
+                                {
+                                }
+
+                                try
+                                {
+                                    var nodes = xmlDoc.SelectNodes("//smns5:DateAttribute[@Name='ParameterModifiedTS']", ns);
+                                    foreach (var node in nodes.Cast<XmlNode>())
+                                    {
+                                        node.ParentNode.RemoveChild(node);
+                                    }
+                                }
+                                catch
+                                {
+                                }
+
+                                try
+                                {
+                                    var nodes = xmlDoc.SelectNodes("//smns6:DateAttribute[@Name='ParameterModifiedTS']", ns);
                                     foreach (var node in nodes.Cast<XmlNode>())
                                     {
                                         node.ParentNode.RemoveChild(node);
@@ -568,6 +759,8 @@ namespace TiaGitHandler
                                 XmlNamespaceManager ns2 = new XmlNamespaceManager(xmlDoc2.NameTable);
                                 ns2.AddNamespace("smns", "http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v3");
                                 ns2.AddNamespace("smns2", "http://www.siemens.com/automation/Openness/SW/Interface/v3");
+                                ns2.AddNamespace("smns3", "http://www.siemens.com/automation/Openness/SW/NetworkSource/StatementList/v3");
+                                ns2.AddNamespace("smns4", "http://www.siemens.com/automation/Openness/SW/NetworkSource/StructuredText/v2");
 
                                 try
                                 {
@@ -713,6 +906,30 @@ namespace TiaGitHandler
                                     try
                                     {
                                         var nodes = xmlDoc2.SelectNodes("//smns:DateAttribute[@Name='ParameterModifiedTS']", ns2);
+                                        foreach (var node in nodes.Cast<XmlNode>())
+                                        {
+                                            node.ParentNode.RemoveChild(node);
+                                        }
+                                    }
+                                    catch
+                                    {
+                                    }
+
+                                    try
+                                    {
+                                        var nodes = xmlDoc2.SelectNodes("//smns3:DateAttribute[@Name='ParameterModifiedTS']", ns2);
+                                        foreach (var node in nodes.Cast<XmlNode>())
+                                        {
+                                            node.ParentNode.RemoveChild(node);
+                                        }
+                                    }
+                                    catch
+                                    {
+                                    }
+
+                                    try
+                                    {
+                                        var nodes = xmlDoc2.SelectNodes("//smns4:DateAttribute[@Name='ParameterModifiedTS']", ns2);
                                         foreach (var node in nodes.Cast<XmlNode>())
                                         {
                                             node.ParentNode.RemoveChild(node);
@@ -1081,6 +1298,7 @@ namespace TiaGitHandler
             DeleteDir(path);
         }
 
+        static int DeleteDirCounter = 0;
         private static void DeleteDir(string dir)
         {
             try
@@ -1090,10 +1308,16 @@ namespace TiaGitHandler
             }
             catch (IOException)
             {
+                DeleteDirCounter++;
+                if (DeleteDirCounter > 10)
+                    throw;
                 DeleteDir(dir);
             }
             catch (UnauthorizedAccessException)
             {
+                DeleteDirCounter++;
+                if (DeleteDirCounter > 10)
+                    throw;
                 DeleteDir(dir);
             }
         }

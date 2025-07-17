@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net481</TargetFramework>
     <UseWPF>true</UseWPF>
+	  <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="AvalonEdit\AWL_Step5_Highlighting.xshd" />
@@ -14,8 +15,8 @@
     <EmbeddedResource Include="AvalonEdit\AWL_Step7_Highlighting.xshd" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AvalonEdit" Version="5.0.4" />
-    <PackageReference Include="DotNetProjects.Extended.Wpf.Toolkit" Version="3.2.59" />
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
+    <PackageReference Include="DotNetProjects.Extended.Wpf.Toolkit" Version="5.0.115" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibNoDaveConnectionLibrary.WinForms\DotNetSiemensPLCToolBoxLibrary.WinForms.csproj" />

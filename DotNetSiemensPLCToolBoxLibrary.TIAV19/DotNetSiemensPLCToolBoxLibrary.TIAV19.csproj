@@ -25,6 +25,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 	<PackageReference Include="NLog" Version="5.3.4" />
+	<PackageReference Include="SharpZipLib" Version="1.4.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\DataCollectorConnect.Models\DataCollectorConnect.Models.csproj" />
@@ -33,9 +34,13 @@
   <ItemGroup>
     <Reference Include="Siemens.Engineering">
       <HintPath>..\externalDlls\siemens\V19\Siemens.Engineering.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Siemens.Engineering.Hmi">
       <HintPath>..\externalDlls\siemens\V19\Siemens.Engineering.Hmi.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>

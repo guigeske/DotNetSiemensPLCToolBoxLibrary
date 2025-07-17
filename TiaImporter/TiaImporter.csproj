@@ -5,10 +5,15 @@
     <TargetFrameworks>net481</TargetFrameworks>    
     <ApplicationIcon />
     <StartupObject />
+	  <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV15_1\DotNetSiemensPLCToolBoxLibrary.TIAV15_1.csproj" />
-    <ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV16\DotNetSiemensPLCToolBoxLibrary.TIAV16.csproj" />
     <ProjectReference Include="..\LibNoDaveConnectionLibrary\DotNetSiemensPLCToolBoxLibrary.csproj" />
   </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <ItemGroup>
+		  <MySourceFiles Include="../DotNetSiemensPLCToolBoxLibrary.TIA*/bin/Debug/net*/DotNetSiemensPLCToolBoxLibrary.TIAV*.*"/>
+	  </ItemGroup>
+	  <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="./bin/Debug/net48"></Copy>
+  </Target>
 </Project>

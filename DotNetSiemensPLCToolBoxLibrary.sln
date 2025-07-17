@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33122.133
@@ -74,13 +73,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSiemensPLCToolBoxLibr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TiaXmlCombiner", "TiaXmlCombiner\TiaXmlCombiner.csproj", "{5623A0DA-4CC8-4954-AD76-90C25E10B2D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV13", "..\SiemensToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary.TIAV13\DotNetSiemensPLCToolBoxLibrary.TIAV13.csproj", "{2DFA2E92-AAD6-3810-D6CF-730AB35E3D67}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV13", "DotNetSiemensPLCToolBoxLibrary.TIAV13\DotNetSiemensPLCToolBoxLibrary.TIAV13.csproj", "{2DFA2E92-AAD6-3810-D6CF-730AB35E3D67}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV17", "..\SiemensToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary.TIAV17\DotNetSiemensPLCToolBoxLibrary.TIAV17.csproj", "{46E5EA6F-BE59-102C-221B-688452D3071B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV17", "DotNetSiemensPLCToolBoxLibrary.TIAV17\DotNetSiemensPLCToolBoxLibrary.TIAV17.csproj", "{46E5EA6F-BE59-102C-221B-688452D3071B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV18", "..\SiemensToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary.TIAV18\DotNetSiemensPLCToolBoxLibrary.TIAV18.csproj", "{D6D4F87A-9B06-94E2-1BF3-4CC696E8AD46}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV18", "DotNetSiemensPLCToolBoxLibrary.TIAV18\DotNetSiemensPLCToolBoxLibrary.TIAV18.csproj", "{D6D4F87A-9B06-94E2-1BF3-4CC696E8AD46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV19", "..\SiemensToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary\DotNetSiemensPLCToolBoxLibrary.TIAV19\DotNetSiemensPLCToolBoxLibrary.TIAV19.csproj", "{301F9C92-6488-9F2E-CDCA-18822F60AA5C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetSiemensPLCToolBoxLibrary.TIAV19", "DotNetSiemensPLCToolBoxLibrary.TIAV19\DotNetSiemensPLCToolBoxLibrary.TIAV19.csproj", "{301F9C92-6488-9F2E-CDCA-18822F60AA5C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetSiemensPLCToolBoxLibrary.TIAV20", "DotNetSiemensPLCToolBoxLibrary.TIAV20\DotNetSiemensPLCToolBoxLibrary.TIAV20.csproj", "{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -688,6 +689,26 @@ Global
 		{301F9C92-6488-9F2E-CDCA-18822F60AA5C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{301F9C92-6488-9F2E-CDCA-18822F60AA5C}.Release|x86.ActiveCfg = Release|Any CPU
 		{301F9C92-6488-9F2E-CDCA-18822F60AA5C}.Release|x86.Build.0 = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Debug|x86.Build.0 = Debug|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|iPhone.Build.0 = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{EC708DC8-0531-4C38-ACBB-3B4E9ECB81AE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

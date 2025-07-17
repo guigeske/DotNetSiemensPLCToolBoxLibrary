@@ -417,7 +417,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
         public static uint GetUIntFromHexString(string myString)
         {
             uint val = 0;
-            foreach (char tmp in myString.ToLower().Replace("dw#16#", "").Replace("w#16#", "").Replace("b#16#", "").Replace("\t", ""))
+            foreach (char tmp in myString.ToLower().Replace("//", "").Replace("dw#16#", "").Replace("w#16#", "").Replace("b#16#", "").Replace("\t", "").Trim())
             {
                 val *= 16;
                 switch (tmp)
@@ -452,7 +452,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
         {
             time = time.ToLower().Replace("s5t#", "").Replace("t#", "").Replace("\t", "");
             //need another text for ms (because it could be minute)
-            time = time.Replace("ms", "a");
+            time = time.Replace("ms", "a").Trim();
 
             int d = 0, h = 0, m = 0, s = 0, ms = 0;
             int val = 0;
@@ -963,7 +963,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
             switch (b1)
             {
                 case 0x80:
-                    anf = "P#PE ";
+                    anf = "P#P ";
                     wrt = (b3 * 0x100 + b4) >> 3;
                     break;
 

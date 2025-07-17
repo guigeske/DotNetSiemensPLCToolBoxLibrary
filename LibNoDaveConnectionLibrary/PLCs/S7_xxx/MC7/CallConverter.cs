@@ -47,7 +47,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
                 for (int n = 0; n < myFct.AWLCode.Count; n++)
                 {
                     S7FunctionBlockRow row = (S7FunctionBlockRow)myFct.AWLCode[n];
-                    if (row.Command == Mnemonic.opBLD[(int)myOpt.Mnemonic] && (row.Parameter == "1" || row.Parameter == "7" || row.Parameter == "3" || row.Parameter == "16" || row.Parameter == "14") && inBld == 0)
+                    if (row.Command == Mnemonic.opBLD[(int)myOpt.Mnemonic] && (row.Parameter == "1" || row.Parameter == "7" || row.Parameter == "3" || row.Parameter == "16" || row.Parameter == "14" || row.Parameter == "9") && inBld == 0)
                     {
                         retVal.AddRange(tempList);
                         tempList.Clear();
@@ -171,7 +171,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
                         else if (row.Command == Mnemonic.opBLD[(int)myOpt.Mnemonic] && (row.Parameter == "2" || row.Parameter == "8"))
                         {
                             //Block Interface auslesen (von FC oder vom Programm)
-                            S7DataRow para = myblkFld.GetInterface(callRow.Parameter);
+                            S7DataRow para = myblkFld.GetInterface(callRow.Parameter, myOpt);
 
                             newRow = new S7FunctionBlockRow();
                             newRow.Command = Mnemonic.opCALL[(int)myOpt.Mnemonic];
@@ -414,8 +414,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
 
                         #endregion FC Aufruf
                     }
-                    else if (inBld == 3 || inBld == 16 || inBld == 14)
-                    {
+                    else if (inBld == 3 || inBld == 16 || inBld == 14 || inBld == 9)
+                    {                        
                         #region FB Aufruf
 
                         tempList.Add(row);
@@ -539,10 +539,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
                             callRow = row;
                             afterCall = true;
                         }
-                        else if (row.Command == Mnemonic.opBLD[(int)myOpt.Mnemonic] && (row.Parameter == "4" || row.Parameter == "17" || row.Parameter == "15"))
+                        else if (row.Command == Mnemonic.opBLD[(int)myOpt.Mnemonic] && (row.Parameter == "4" || row.Parameter == "17" || row.Parameter == "15" || row.Parameter == "10"))
                         {
                             //Block Interface auslesen (von FC oder vom Programm)
-                            S7DataRow para = myblkFld.GetInterface(callRow.Parameter);
+                            S7DataRow para = myblkFld.GetInterface(callRow.Parameter, myOpt);
 
                             newRow = new S7FunctionBlockRow();
                             newRow.Parent = callRow.Parent;

@@ -6,11 +6,18 @@
     <TargetFramework>net481</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+	  <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     <ApplicationIcon />
     <StartupObject />
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="EPPlus" Version="4.5.3.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV13\DotNetSiemensPLCToolBoxLibrary.TIAV13.csproj">
+      <Private>true</Private>
+    </ProjectReference>
     <ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV14SP1\DotNetSiemensPLCToolBoxLibrary.TIAV14SP1.csproj">
       <Private>true</Private>
     </ProjectReference>
@@ -23,6 +30,14 @@
     <ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV16\DotNetSiemensPLCToolBoxLibrary.TIAV16.csproj">
       <Private>true</Private>
     </ProjectReference>
+    <ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV17\DotNetSiemensPLCToolBoxLibrary.TIAV17.csproj">
+      <Private>True</Private>
+    </ProjectReference>
+	<ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV18\DotNetSiemensPLCToolBoxLibrary.TIAV18.csproj">
+		<Private>True</Private>
+	</ProjectReference>
+	<ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV19\DotNetSiemensPLCToolBoxLibrary.TIAV19.csproj" />
+	<ProjectReference Include="..\DotNetSiemensPLCToolBoxLibrary.TIAV20\DotNetSiemensPLCToolBoxLibrary.TIAV20.csproj" />
     <ProjectReference Include="..\LibNoDaveConnectionLibrary.WinForms\DotNetSiemensPLCToolBoxLibrary.WinForms.csproj" />
     <ProjectReference Include="..\LibNoDaveConnectionLibrary\DotNetSiemensPLCToolBoxLibrary.csproj" />
   </ItemGroup>
