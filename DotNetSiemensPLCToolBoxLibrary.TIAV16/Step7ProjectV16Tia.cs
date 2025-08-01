@@ -614,12 +614,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V16
                         plc.Status = true;
                         plc.Id = this.Name;
                         plc.Slot = deviceItem.PositionNumber.ToString();
-                        plc.Type = GetPlcAttribute(deviceItem, "TypeName");
+                        plc.SiemensPlcType = GetPlcAttribute(deviceItem, "TypeName");
                         plc.FirmwareVersion = GetPlcAttribute(deviceItem, "FirmwareVersion");
                         plc.PartNumber = GetPlcAttribute(deviceItem, "OrderNumber");
                         plc.PlcNetwork = new List<SiemensPlcSubnet>();
 
-                        logger.Info("---> PLC: " + this.Name + ":" + plc.Type);
+                        logger.Info("---> PLC: " + this.Name + ":" + plc.SiemensPlcType);
 
                         foreach (DeviceItem item in deviceItem.Items)
                         {
