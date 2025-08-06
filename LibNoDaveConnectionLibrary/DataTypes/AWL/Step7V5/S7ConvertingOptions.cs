@@ -15,7 +15,10 @@
                 && this.ReplaceDIAccessesWithSymbolNames.Equals(other.ReplaceDIAccessesWithSymbolNames)
                 && this.GenerateCallsfromUCs.Equals(other.GenerateCallsfromUCs)
                 && this.UseInFCStoredFCsForCalls.Equals(other.UseInFCStoredFCsForCalls)
-                && this.UseFBDeclarationForInstanceDB.Equals(other.UseFBDeclarationForInstanceDB);
+                && this.UseFBDeclarationForInstanceDB.Equals(other.UseFBDeclarationForInstanceDB)
+                && this.UseDBActualValues.Equals(other.UseDBActualValues)
+                && this.ExpandArrays.Equals(other.ExpandArrays)
+                && this.CheckForInterfaceTimestampConflicts.Equals(other.CheckForInterfaceTimestampConflicts);
         }
 
         public override int GetHashCode()
@@ -31,6 +34,9 @@
                 hashCode = (hashCode * 397) ^ this.GenerateCallsfromUCs.GetHashCode();
                 hashCode = (hashCode * 397) ^ this.UseInFCStoredFCsForCalls.GetHashCode();
                 hashCode = (hashCode * 397) ^ this.UseFBDeclarationForInstanceDB.GetHashCode();
+                hashCode = (hashCode * 397) ^ this.UseDBActualValues.GetHashCode();
+                hashCode = (hashCode * 397) ^ this.ExpandArrays.GetHashCode();
+                hashCode = (hashCode * 397) ^ this.CheckForInterfaceTimestampConflicts.GetHashCode();
                 return hashCode;
             }
         }
@@ -51,18 +57,25 @@
             this.UseInFCStoredFCsForCalls = true; //todo implement the reading of them in the step7 project
             this.UseComments = true;
             this.UseFBDeclarationForInstanceDB = true; //Default to Simatic Mamager Behavior
+            this.UseDBActualValues = false;
+            this.ExpandArrays = false;
+            this.CheckForInterfaceTimestampConflicts = false;
         }
 
         public bool UseComments { get; set; }
         public MnemonicLanguage Mnemonic { get; set; }
         public bool CombineDBOpenAndDBAccess { get; set; }
         public bool ReplaceDBAccessesWithSymbolNames { get; set; }
+        public bool UseDBActualValues { get; set; }
+        public bool ExpandArrays { get; set; }
 
         public bool ReplaceLokalDataAddressesWithSymbolNames { get; set; }
         public bool ReplaceDIAccessesWithSymbolNames { get; set; }
 
         public bool GenerateCallsfromUCs { get; set; }
         public bool UseInFCStoredFCsForCalls { get; set; }
+
+        public bool CheckForInterfaceTimestampConflicts { get; set; }
 
         /// <summary>
         /// use the FB instance declartion symbolics for displaying Instance DB Variables

@@ -138,7 +138,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
         /// <summary>
         /// Help class, used to hold unparsed raw data read from the S7 Project files from disk
         /// </summary>
-        private class tmpBlock
+        public class TmpBlock
         {
             public byte[] mc7code;
             public byte[] uda;
@@ -155,6 +155,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
             public string version;
             public DateTime LastCodeChange;
             public DateTime LastInterfaceChange;
+            public DateTime LastInterfaceChangeHistory;
             public bool IsInstanceDB;
             public bool IsSFB;
             public int FBNumber;
@@ -162,7 +163,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
             public PLCLanguage BlockLanguage;
         }
 
-        private Dictionary<string, tmpBlock> tmpBlocks; //internal cached list of blocks already read from the S7 Project
+        private Dictionary<string, TmpBlock> tmpBlocks; //internal cached list of blocks already read from the S7 Project
 
         public ProjectBlockInfo GetProjectBlockInfoFromBlockName(string BlockName)
         {
@@ -177,7 +178,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
         public void ChangeKnowHowProtection(S7ProjectBlockInfo blkInfo, bool KnowHowProtection)
         {
-            tmpBlock myTmpBlk = new tmpBlock();
+            TmpBlock myTmpBlk = new TmpBlock();
 
             if (subblkDBF != null)
             {
@@ -207,7 +208,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
         public void UndeleteBlock(S7ProjectBlockInfo blkInfo, int newBlockNumber)
         {
-            tmpBlock myTmpBlk = new tmpBlock();
+            TmpBlock myTmpBlk = new TmpBlock();
 
             if (((Step7ProjectV5)Project)._ziphelper.FileExists(Folder + "BAUSTEIN.DBF"))
             {
@@ -247,11 +248,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
         /// </summary>
         /// <param name="blkInfo">The Block info object that identifies the block to read from Disk</param>
         /// <returns></returns>
-        private tmpBlock GetBlockBytes(ProjectBlockInfo blkInfo)
+        public TmpBlock GetBlockBytes(ProjectBlockInfo blkInfo)
         {
             if (subblkDBF != null) //ZipHelper.FileExists(((Step7ProjectV5)Project)._zipfile, Folder + "SUBBLK.DBF"))
             {
-                tmpBlock myTmpBlk = new tmpBlock();
+                TmpBlock myTmpBlk = new TmpBlock();
 
                 var bstTbl = bausteinDBF;
                 DataRow[] bstRows = bstTbl.Select("ID = " + blkInfo.id);
@@ -322,6 +323,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                             myTmpBlk.nwinfo = addinfo;
                             //This line contains Network Information, and after it the Position of the JumpMarks
 
+                            // ssbpart contains the MC7 interface from the PLC
+                            myTmpBlk.blkinterfaceInMC5 = ssbpart;
                             myTmpBlk.LastCodeChange = GetTimeStamp((string)row["TIMESTAMP1"]);
                             myTmpBlk.LastInterfaceChange = GetTimeStamp((string)row["TIMESTAMP2"]);
 
@@ -333,10 +336,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                         }
                         else if (subblktype == 5 || subblktype == 3 || subblktype == 4 || subblktype == 7 || subblktype == 9) //FC, OB, FB, SFC, SFB
                         {
-                            //Interface in mc5code
+                            // Interface in plaintext
                             if (mc5code != null)
-                                myTmpBlk.blkinterface =
-                                    Project.ProjectEncoding.GetString(mc5code);
+                            {
+                                myTmpBlk.blkinterface = Project.ProjectEncoding.GetString(mc5code);
+                                myTmpBlk.LastInterfaceChangeHistory = GetTimeStamp((string)row["TIMESTAMP2"]);
+                            }
                         }
                         else if (subblktype == 19 || subblktype == 17 || subblktype == 18 || subblktype == 22 ||
                                  subblktype == 21) //FC, OB, FB, SFC, SFB
@@ -350,18 +355,26 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                         {
                             //DB Structure in Plain Text (Structure and StartValues!)
                             if (mc5code != null)
-                                myTmpBlk.blkinterface =
-                                    Project.ProjectEncoding.GetString(mc5code);
+                            {
+                                myTmpBlk.blkinterface = Project.ProjectEncoding.GetString(mc5code);
+                                myTmpBlk.LastInterfaceChangeHistory = GetTimeStamp((string)row["TIMESTAMP2"]);
+                            }
+
+                            // DB blocks get their timestamps from the MC7 interface record (when subblktype == 10). UDT blocks can't be downloaded and don't have this same record.
+                            if (blkInfo.BlockType == PLCBlockType.UDT)
+                            {
+                                myTmpBlk.LastCodeChange = GetTimeStamp((string)row["TIMESTAMP1"]);
+                                myTmpBlk.LastInterfaceChange = GetTimeStamp((string)row["TIMESTAMP2"]);
+                            }
+
                             //Maybe compiled DB Structure?
                             myTmpBlk.addinfo = addinfo;
-
-                            myTmpBlk.LastCodeChange = GetTimeStamp((string)row["TIMESTAMP1"]);
-                            myTmpBlk.LastInterfaceChange = GetTimeStamp((string)row["TIMESTAMP2"]);
                         }
                         else if (subblktype == 10) //DB
                         {
-                            //Need to check wich Information is stored here
+                            // mc7code contains the actual values of the DB from the PLC
                             myTmpBlk.mc7code = mc5code;
+                            // ssbpart contains the MC7 interface from the PLC
                             myTmpBlk.blkinterfaceInMC5 = ssbpart;
                             myTmpBlk.LastCodeChange = GetTimeStamp((string)row["TIMESTAMP1"]);
                             myTmpBlk.LastInterfaceChange = GetTimeStamp((string)row["TIMESTAMP2"]);
@@ -369,8 +382,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                             if (ssbpart != null && ssbpartlen > 2 && (ssbpart[0] == 0x0a || ssbpart[0] == 0x0b))
                             {
                                 // if ssbpart[0] == 5 this DB is normal
-                                // if ssbpart[0] == 10 this DB is instance for FB,
-                                // if ssbpart[0] == 11 this DB is instance for SFB,
+                                // if ssbpart[0] == 10 this DB is instance for FB, 
+                                // if ssbpart[0] == 11 this DB is instance for SFB, 
                                 myTmpBlk.IsInstanceDB = true;
                                 if (ssbpart[0] == 11)
                                     myTmpBlk.IsSFB = true;
@@ -412,7 +425,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
         /// </summary>
         /// <param name="blkName">The blockname to be read from disk. eg. DB2, FB38....</param>
         /// <returns></returns>
-        private tmpBlock GetBlockBytes(string blkName)
+        private TmpBlock GetBlockBytes(string blkName)
         {
             var blkInfo = GetProjectBlockInfoFromBlockName(blkName);
             if (blkInfo == null)
@@ -422,12 +435,26 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
         public S7DataRow GetInterface(string blkName)
         {
+            var myConvOpt = new S7ConvertingOptions(Project.ProjectLanguage);
+
+            return GetInterface(blkName, myConvOpt);
+        }
+
+        public S7DataRow GetInterface(string blkName, S7ConvertingOptions myConvOpt)
+        {
             var blkInfo = GetProjectBlockInfoFromBlockName(blkName);
             if (blkInfo == null)
                 return null;
-            tmpBlock myTmpBlk = GetBlockBytes(blkInfo);
+            TmpBlock myTmpBlk = GetBlockBytes(blkInfo);
             List<string> tmpPar = new List<string>();
-            return Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref tmpPar, blkInfo.BlockType, false, this, null);
+            if (myConvOpt.CheckForInterfaceTimestampConflicts && S7Block.HasTimestampConflict(myTmpBlk.LastInterfaceChange, myTmpBlk.LastInterfaceChangeHistory))
+            {
+                return GetInterfaceStructureFromMC7(blkInfo, myTmpBlk, null, ref tmpPar);
+            }
+            else
+            {
+                return Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref tmpPar, blkInfo.BlockType, false, this, null, myConvOpt);
+            }
         }
 
         /// <summary>
@@ -479,7 +506,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                 return blkInfo._Block;
 
             ProjectPlcBlockInfo plcblkifo = (ProjectPlcBlockInfo)blkInfo;
-            tmpBlock myTmpBlk = GetBlockBytes(blkInfo);
+            TmpBlock myTmpBlk = GetBlockBytes(blkInfo);
 
             List<Step7Attribute> step7Attributes = null;
 
@@ -534,18 +561,21 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                     if (retVal.IsInstanceDB && myConvOpt.UseFBDeclarationForInstanceDB)
                     {
                         //load the FB data from the Project
-                        tmpBlock InstFB = GetBlockBytes((myTmpBlk.IsSFB ? "SFB" : "FB") + myTmpBlk.FBNumber);
+                        TmpBlock InstFB = GetBlockBytes((myTmpBlk.IsSFB ? "SFB" : "FB") + myTmpBlk.FBNumber);
 
                         //Resolve both interfaces
                         List<string> tmpPar = new List<string>();
                         if (InstFB != null)
                         {
+                            // Set the InstanceDB's history time to the most recent change of the FB
+                            myTmpBlk.LastInterfaceChangeHistory = InstFB.LastInterfaceChange;
+
                             S7DataRow InterfaceFB =
                                 Parameter.GetInterfaceOrDBFromStep7ProjectString(InstFB.blkinterface, ref tmpPar,
-                                    PLCBlockType.FB, false, this, null);
+                                    PLCBlockType.FB, false, this, null, myConvOpt);
                             S7DataRow InterfaceDB =
                                 Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref tmpPar,
-                                    PLCBlockType.DB, false, this, null);
+                                    PLCBlockType.DB, false, this, null, myConvOpt);
 
                             //Only use the FB interface Declaration if they are compatible
                             if (Parameter.IsInterfaceCompatible(InterfaceFB, InterfaceDB))
@@ -556,20 +586,18 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                     if (myTmpBlk.mc7code != null)
                         retVal.CodeSize = myTmpBlk.mc7code.Length;
 
-                    retVal.StructureFromString = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref tmpList, blkInfo.BlockType, false, this, retVal, myTmpBlk.mc7code);
-                    if (myTmpBlk.blkinterfaceInMC5 != null)
-                    {
-                        //List<string> tmp = new List<string>();
-                        //retVal.StructureFromMC7 = Parameter.GetInterface(myTmpBlk.blkinterfaceInMC5, myTmpBlk.mc7code, ref tmp, blkInfo.BlockType, myTmpBlk.IsInstanceDB, retVal);
-                    }
+                    retVal.LastCodeChange = myTmpBlk.LastCodeChange;
+                    retVal.LastInterfaceChange = myTmpBlk.LastInterfaceChange;
+                    retVal.LastInterfaceChangeHistory = myTmpBlk.LastInterfaceChangeHistory;
+
+                    retVal.StructureFromMC7 = GetInterfaceStructureFromMC7(blkInfo, myTmpBlk, retVal, ref tmpList);
+                    retVal.StructureFromString = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref tmpList, blkInfo.BlockType, false, this, retVal, myConvOpt, myTmpBlk.mc7code);
+
                     retVal.BlockNumber = plcblkifo.BlockNumber;
                     retVal.Name = plcblkifo.Name;
                     retVal.Family = ((S7ProjectBlockInfo)plcblkifo).Family;
                     retVal.BlockType = blkInfo.BlockType;
                     retVal.Attributes = step7Attributes;
-
-                    retVal.LastCodeChange = myTmpBlk.LastCodeChange;
-                    retVal.LastInterfaceChange = myTmpBlk.LastInterfaceChange;
 
                     retVal.ParentFolder = this;
                     retVal.usedS7ConvertingOptions = myConvOpt;
@@ -586,6 +614,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
                     retVal.LastCodeChange = myTmpBlk.LastCodeChange;
                     retVal.LastInterfaceChange = myTmpBlk.LastInterfaceChange;
+                    retVal.LastInterfaceChangeHistory = myTmpBlk.LastInterfaceChangeHistory;
 
                     retVal.BlockNumber = plcblkifo.BlockNumber;
                     retVal.Name = plcblkifo.Name;
@@ -598,7 +627,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                     retVal.Author = myTmpBlk.username;
                     retVal.Version = myTmpBlk.version;
 
-                    retVal.Parameter = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref ParaList, blkInfo.BlockType, false, this, retVal);
+                    if (myConvOpt.CheckForInterfaceTimestampConflicts && S7Block.HasTimestampConflict(retVal.LastInterfaceChange, retVal.LastInterfaceChangeHistory))
+                    {
+                        retVal.Parameter = GetInterfaceStructureFromMC7(blkInfo, myTmpBlk, retVal, ref ParaList);
+                    }
+                    else
+                    {
+                        retVal.Parameter = Parameter.GetInterfaceOrDBFromStep7ProjectString(myTmpBlk.blkinterface, ref ParaList, blkInfo.BlockType, false, this, retVal, myConvOpt);
+                    }
 
                     byte[] desc = myTmpBlk.blockdescription;
 
@@ -639,6 +675,24 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
                         FBStaticAccessConverter.ReplaceStaticAccess(retVal, prgFld, myConvOpt);
 
+                        for (int i = 0; i < retVal.AWLCode.Count - 1; i++)
+                        {
+                            S7FunctionBlockRow akRw = (S7FunctionBlockRow)retVal.AWLCode[i];
+
+                            if (akRw.CombineDBAccess)
+                            {
+                                S7FunctionBlockRow nRw = (S7FunctionBlockRow)retVal.AWLCode[i + 1];
+                                if (!nRw.Parameter.Contains("["))
+                                {
+                                    nRw.Parameter = akRw.Parameter + "." + nRw.Parameter;
+                                    nRw.MC7 = Helper.CombineByteArray(akRw.MC7, nRw.MC7);
+                                    nRw.Label = akRw.Label ?? nRw.Label;
+                                    retVal.AWLCode.RemoveAt(i + 1);
+                                    retVal.AWLCode[i] = nRw;
+                                }
+                            }
+                        }
+                        
                         #region UseComments from Block
 
                         if (myConvOpt.UseComments)
@@ -670,42 +724,19 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                                         string tx2 = Project.ProjectEncoding.GetString(cmt, n + startNWKomm, lenNWKommZeile - startNWKomm - 1).Replace("\n", Environment.NewLine);
                                         n += lenNWKommZeile;
 
+                                        while (retVal.AWLCode.Count > akRowInAwlCode && retVal.AWLCode[akRowInAwlCode].Command != "NETWORK")
+                                        {
+                                            newAwlCode.Add(retVal.AWLCode[akRowInAwlCode]);
+                                            akRowInAwlCode++;
+                                        }
+
                                         if (retVal.AWLCode.Count > akRowInAwlCode)
                                         {
-                                            while (retVal.AWLCode.Count - 1 > akRowInAwlCode && retVal.AWLCode[akRowInAwlCode].Command != "NETWORK")
-                                            {
-                                                if (!newAwlCode.Contains(retVal.AWLCode[akRowInAwlCode]))
-                                                {
-                                                    //newAwlCode.Add(retVal.AWLCode[akRowInAwlCode]);
-                                                    S7FunctionBlockRow akRw = (S7FunctionBlockRow)retVal.AWLCode[akRowInAwlCode];
-
-                                                    if (akRw.CombineDBAccess)
-                                                    {
-                                                        S7FunctionBlockRow nRw = (S7FunctionBlockRow)retVal.AWLCode[akRowInAwlCode + 1];
-                                                        if (!nRw.Parameter.Contains("["))
-                                                        {
-                                                            nRw.Parameter = akRw.Parameter + "." + nRw.Parameter;
-                                                            nRw.MC7 = Helper.CombineByteArray(akRw.MC7, nRw.MC7);
-                                                            nRw.Label = akRw.Label ?? nRw.Label;
-                                                            akRw = nRw;
-                                                            retVal.AWLCode.RemoveAt(akRowInAwlCode + 1);
-                                                        }
-                                                    }
-
-                                                    if (!newAwlCode.Contains(akRw))
-                                                        newAwlCode.Add(akRw);
-                                                }
-                                                akRowInAwlCode++;
-                                            }
-                                            if (akRowInAwlCode > retVal.AWLCode.Count - 1)
-                                            {
-                                                akRowInAwlCode = retVal.AWLCode.Count - 1;
-                                            }
                                             ((S7FunctionBlockRow)retVal.AWLCode[akRowInAwlCode]).NetworkName = tx1;
                                             ((S7FunctionBlockRow)retVal.AWLCode[akRowInAwlCode]).Comment = tx2;
                                             newAwlCode.Add(retVal.AWLCode[akRowInAwlCode]);
+                                            akRowInAwlCode++;
                                         }
-                                        akRowInAwlCode++;
 
                                         lineNumberInCall = 0;
                                     }
@@ -723,20 +754,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                                                 if (cmt[n + 4] == 0xc0 && q == anzUebsprungZeilen - 1)
                                                     akRw.CombineDBAccess = false;
 
-                                                //Db Zugriff zusammenfügen...
-                                                if (akRw.CombineDBAccess)
-                                                {
-                                                    S7FunctionBlockRow nRw = (S7FunctionBlockRow)retVal.AWLCode[akRowInAwlCode + 1];
-                                                    nRw.Parameter = akRw.Parameter + "." + nRw.Parameter;
-                                                    nRw.MC7 = Helper.CombineByteArray(akRw.MC7, nRw.MC7);
-                                                    nRw.Label = akRw.Label ?? nRw.Label;
-                                                    akRw = nRw;
-                                                    retVal.AWLCode.RemoveAt(akRowInAwlCode + 1);
-                                                }
-
-                                                if (!newAwlCode.Contains(akRw))
-                                                    newAwlCode.Add(akRw);
-
                                                 if (akRw.GetNumberOfLines() == 1)
                                                 {
                                                     lineNumberInCall = 0;
@@ -746,6 +763,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                                                     //if (!newAwlCode.Contains(akRw))
                                                     //    newAwlCode.Add(akRw);
 
+                                                    newAwlCode.Add(akRw);
                                                     akRowInAwlCode++;
                                                 }
                                                 else
@@ -759,6 +777,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
 
                                                     if (akRw.GetNumberOfLines() - 1 == lineNumberInCall)
                                                     {
+                                                        newAwlCode.Add(akRw);
                                                         akRowInAwlCode++;
                                                         lineNumberInCall = 0;
                                                         //subCnt++;    //The set to zero was wrong here, but maybe now comments on calls do not work, need to check!
@@ -822,6 +841,45 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders.Step7V5
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Converts the MC7 code of the block interface to S7DataRow
+        /// </summary>
+        public S7DataRow GetInterfaceStructureFromMC7(ProjectBlockInfo blkInfo, TmpBlock myTmpBlk, S7Block block, ref List<string> paramList)
+        {
+            if (myTmpBlk.blkinterfaceInMC5 == null || myTmpBlk.blkinterfaceInMC5.Length == 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                // Not sure what bytes 0-2 in the header are for
+                // Bytes 3-4 are the interface length (not including header)
+                var interfaceLen = BitConverter.ToUInt16(myTmpBlk.blkinterfaceInMC5, 3);
+                var headerPlusInterfaceLen = 7 + interfaceLen;
+                var interfaceBytes = new byte[headerPlusInterfaceLen];
+                Array.Copy(myTmpBlk.blkinterfaceInMC5, 0, interfaceBytes, 0, headerPlusInterfaceLen);
+
+                // Bytes 5-6 are the start values length
+                var startValuesLen = BitConverter.ToUInt16(myTmpBlk.blkinterfaceInMC5, 5);
+                byte[] startValuesBytes = null;
+                if (startValuesLen > 0)
+                {
+                    startValuesBytes = new byte[startValuesLen];
+                    Array.Copy(myTmpBlk.blkinterfaceInMC5, headerPlusInterfaceLen, startValuesBytes, 0, startValuesLen);
+                }
+
+                // Only DB blocks have actual values
+                var actualValuesBytes = blkInfo.BlockType == PLCBlockType.DB ? myTmpBlk.mc7code : null;
+
+                return Parameter.GetInterface(interfaceBytes, startValuesBytes, actualValuesBytes, ref paramList, blkInfo.BlockType, myTmpBlk.IsInstanceDB, block);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>

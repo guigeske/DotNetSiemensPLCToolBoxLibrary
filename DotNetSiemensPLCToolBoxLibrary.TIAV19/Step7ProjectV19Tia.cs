@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Security;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
-using DataCollectorConnect.Models.Standard;
-using DataCollectorConnect.Models.Standard.Siemens;
+﻿using DataCollectorConnect.Models.Standard.Siemens;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V11;
@@ -18,7 +9,6 @@ using DotNetSiemensPLCToolBoxLibrary.Projectfiles.TIA.Openness;
 using NLog;
 using Siemens.Engineering;
 using Siemens.Engineering.Compiler;
-using Siemens.Engineering.HmiUnified.HmiTags;
 using Siemens.Engineering.HW;
 using Siemens.Engineering.HW.Features;
 using Siemens.Engineering.SW;
@@ -27,7 +17,15 @@ using Siemens.Engineering.SW.Blocks;
 using Siemens.Engineering.SW.Supervision;
 using Siemens.Engineering.SW.Tags;
 using Siemens.Engineering.SW.Types;
+using Siemens.Engineering.SW.Units;
 using Siemens.Engineering.SW.WatchAndForceTables;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
 {
@@ -53,6 +51,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
             tiapProject = null;
             tiaPortal = null;
         }
+
 
         public class TIAOpennessProjectFolder : ProjectFolder, ITIAOpennessProjectFolder
         {
@@ -445,6 +444,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
             //    plcSoftware.BlockGroup.Blocks.Import(file, overwrite ? ImportOptions.Override : ImportOptions.None);
             //}
 
+
             public TIAOpennessProgramFolder ProgramFolder { get; set; }
             public TIAOpennessPlcDatatypeFolder PlcDatatypeFolder { get; set; }
             public TIAOpennessVariablesFolder VarTabFolder { get; set; }
@@ -832,6 +832,21 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
                     }
                     return retVal;
                 }
+            }
+
+            public override ProjectFolder CreateFolder(string name)
+            {
+                var gp = group.Groups.Create(name);
+                var newFld = new TIAOpennessVariablesFolder((Step7ProjectV19)Project, ControllerFolder, gp);
+                newFld.Name = gp.Name;
+                newFld.Parent = this;
+                this.SubItems.Add(newFld);
+                return newFld;
+            }
+
+            public override void ImportFile(FileInfo file, bool overwrite, bool importFromSource)
+            {
+                this.group.TagTables.Import(file, overwrite ? ImportOptions.Override : ImportOptions.None);
             }
         }
 
@@ -1265,6 +1280,45 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
             }
         }
 
+        public override void ExportTextlists(ProjectFolder folder, string exportPath)
+        {         
+            foreach (var d in tiapProject.Devices)
+            {
+                if (d.TypeIdentifier != null && (d.TypeIdentifier.EndsWith(".S71500") || d.TypeIdentifier.EndsWith("ET200SP_OC")))
+                {
+                    foreach (DeviceItem deviceItem in d.DeviceItems)
+                    {
+                        var parent = deviceItem.Parent;
+                        var target = ((IEngineeringServiceProvider)deviceItem).GetService<SoftwareContainer>();
+                        if (target != null && target.Software is PlcSoftware)
+                        {
+                            var plcSoftware = (PlcSoftware)target.Software;
+                            var alarmTextListProvider = plcSoftware.GetService<PlcAlarmTextListProvider>();
+                            var PlcAlarmTextlistGroup = plcSoftware.PlcAlarmTextlistGroup;
+                            foreach (var plcAlarmUserTextlist in PlcAlarmTextlistGroup.PlcAlarmUserTextlists)
+                            {
+                                var plcAlarmUserTextlistName = plcAlarmUserTextlist.Name;
+                                var filePath = Path.Combine(exportPath, folder.Name, deviceItem.Name.Replace("-",""), "plcalarmtextlistgroup", plcAlarmUserTextlistName) + ".xlsx";
+                                var fileInfo = new FileInfo(filePath);
+
+                                if (!Directory.Exists(fileInfo.DirectoryName))
+                                {
+                                    Directory.CreateDirectory(fileInfo.DirectoryName);
+                                }
+
+                                if (fileInfo.Exists)
+                                {
+                                    fileInfo.Delete();
+                                }
+
+                                alarmTextListProvider.ExportToXlsx(fileInfo, new List<string> { plcAlarmUserTextlistName }, tiapProject.LanguageSettings.ActiveLanguages);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         internal void OpenViaOpennessDlls(Credentials credentials)
         {
             bool installed = false;
@@ -1486,6 +1540,55 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
                 fld4,
                 software.WatchAndForceTableGroup
             );
+
+            var units = software.GetService<PlcUnitProvider>().UnitGroup.Units;
+            foreach (var unit in units)
+            {
+                LoadSoftwareUnitViaOpennessDlls(parent, unit);
+            }
+        }
+
+        internal void LoadSoftwareUnitViaOpennessDlls(
+            TIAOpennessControllerFolder parent,
+            Siemens.Engineering.SW.Units.PlcUnit unit
+        )
+        {
+
+            var fld = new TIAOpennessProgramFolder(
+                this,
+                parent,
+                unit.BlockGroup.Blocks,
+                unit.BlockGroup
+            )
+            {
+                Name = unit.Name + "\\software",
+                Parent = parent,
+            };
+            parent.ProgramFolder = fld;
+            parent.SubItems.Add(fld);
+
+            LoadSubProgramBlocksFoldersViaOpennessDlls(fld, unit.BlockGroup);
+
+            var t = (PlcTypeGroup)unit.TypeGroup;
+
+            var fld2 = new TIAOpennessPlcDatatypeFolder(this, parent, t.Types, t)
+            {
+                //TiaPortalItem = controller.ControllerDatatypeFolder,
+                Name = unit.Name + "\\data types",
+                Parent = parent,
+            };
+            parent.PlcDatatypeFolder = fld2;
+            parent.SubItems.Add(fld2);
+            LoadSubPlcDatatypeFoldersViaOpennessDlls(fld2, unit.TypeGroup);
+
+            var fld3 = new TIAOpennessVariablesFolder(this, parent, unit.TagTableGroup)
+            {
+                Name = unit.Name + "\\variables",
+                Parent = parent,
+            };
+            parent.VarTabFolder = fld3;
+            parent.SubItems.Add(fld3);
+            LoadSubVartabFoldersViaOpennessDlls(fld3, unit.TagTableGroup);
         }
 
         #region Load Sub Fodlers
@@ -1893,6 +1996,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
                                     row.DataType = S7DataRowType.UDT;
                                 }
 
+                                //Console.WriteLine("unkown Datatype: " + datatype);
                                 break;
                         }
                     }

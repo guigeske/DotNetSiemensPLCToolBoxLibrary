@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Security;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
-using DataCollectorConnect.Models.Standard;
+﻿using DataCollectorConnect.Models.Standard;
 using DataCollectorConnect.Models.Standard.Siemens;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks;
@@ -14,9 +6,12 @@ using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V11;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Projectfolders;
 using DotNetSiemensPLCToolBoxLibrary.General;
+using DotNetSiemensPLCToolBoxLibrary.General;
+using DotNetSiemensPLCToolBoxLibrary.Projectfiles.TIA.Openness;
 using DotNetSiemensPLCToolBoxLibrary.Projectfiles.TIA.Openness;
 using NLog;
 using Siemens.Engineering;
+using Siemens.Engineering.Compiler;
 using Siemens.Engineering.Compiler;
 using Siemens.Engineering.HW;
 using Siemens.Engineering.HW.Features;
@@ -25,8 +20,19 @@ using Siemens.Engineering.SW.Alarm;
 using Siemens.Engineering.SW.Blocks;
 using Siemens.Engineering.SW.Supervision;
 using Siemens.Engineering.SW.Tags;
+using Siemens.Engineering.SW.Tags;
 using Siemens.Engineering.SW.Types;
+using Siemens.Engineering.SW.Units;
 using Siemens.Engineering.SW.WatchAndForceTables;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Security;
+using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
 {
@@ -37,6 +43,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
     /// </summary>
     public partial class Step7ProjectV18
     {
+
         private Siemens.Engineering.TiaPortal tiaPortal;
 
         private Siemens.Engineering.Project tiapProject;
@@ -51,6 +58,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
             tiapProject = null;
             tiaPortal = null;
         }
+
 
         public class TIAOpennessProjectFolder : ProjectFolder, ITIAOpennessProjectFolder
         {
@@ -442,6 +450,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
             //{
             //    plcSoftware.BlockGroup.Blocks.Import(file, overwrite ? ImportOptions.Override : ImportOptions.None);
             //}
+
 
             public TIAOpennessProgramFolder ProgramFolder { get; set; }
             public TIAOpennessPlcDatatypeFolder PlcDatatypeFolder { get; set; }
@@ -1273,6 +1282,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                     if (tiaPortal != null)
                     {
                         tiaPortal.Dispose();
+                        tiaPortal = null;
                     }
 
                     tiaPortal = new TiaPortal(TiaPortalMode.WithoutUserInterface);
@@ -1353,6 +1363,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                         main.SubItems.Add(fld);
 
                         LoadControlerFolderViaOpennessDlls(fld, software);
+                           
                     }
                 }
 
@@ -1484,6 +1495,55 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                 fld4,
                 software.WatchAndForceTableGroup
             );
+
+            var units = software.GetService<PlcUnitProvider>().UnitGroup.Units;
+            foreach (var unit in units)
+            {
+                LoadSoftwareUnitViaOpennessDlls(parent, unit);
+            }
+        }
+
+        internal void LoadSoftwareUnitViaOpennessDlls(
+            TIAOpennessControllerFolder parent,
+            Siemens.Engineering.SW.Units.PlcUnit unit
+        )
+        {
+
+            var fld = new TIAOpennessProgramFolder(
+                this,
+                parent,
+                unit.BlockGroup.Blocks,
+                unit.BlockGroup
+            )
+            {
+                Name = unit.Name + "\\software",
+                Parent = parent,
+            };
+            parent.ProgramFolder = fld;
+            parent.SubItems.Add(fld);
+
+            LoadSubProgramBlocksFoldersViaOpennessDlls(fld, unit.BlockGroup);
+
+            var t = (PlcTypeGroup)unit.TypeGroup;
+
+            var fld2 = new TIAOpennessPlcDatatypeFolder(this, parent, t.Types, t)
+            {
+                //TiaPortalItem = controller.ControllerDatatypeFolder,
+                Name = unit.Name + "\\data types",
+                Parent = parent,
+            };
+            parent.PlcDatatypeFolder = fld2;
+            parent.SubItems.Add(fld2);
+            LoadSubPlcDatatypeFoldersViaOpennessDlls(fld2, unit.TypeGroup);
+
+            var fld3 = new TIAOpennessVariablesFolder(this, parent, unit.TagTableGroup)
+            {
+                Name = unit.Name + "\\variables",
+                Parent = parent,
+            };
+            parent.VarTabFolder = fld3;
+            parent.SubItems.Add(fld3);
+            LoadSubVartabFoldersViaOpennessDlls(fld3, unit.TagTableGroup);
         }
 
         #region Load Sub Fodlers
@@ -1891,6 +1951,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                                     row.DataType = S7DataRowType.UDT;
                                 }
 
+                                //Console.WriteLine("unkown Datatype: " + datatype);
                                 break;
                         }
                     }

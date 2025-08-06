@@ -4,10 +4,11 @@
     <OutputType>WinExe</OutputType>
     <TargetFrameworks>net481</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
+	  <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AvalonEdit" Version="5.0.4" />
+    <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="JFKCommonLibrary">
