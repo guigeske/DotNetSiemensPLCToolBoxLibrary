@@ -29,10 +29,11 @@ using System.Xml.Linq;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
 {
-    public interface ITiaProjectBlockInfo : IProjectBlockInfo
-    {
-    }
+    public interface ITiaProjectBlockInfo : IProjectBlockInfo { }
 
+    /// <summary>
+    ///Load data from TIA project instance using the Siemens.Engineering.dll and create a hierarchical structure of "folders" to store and access this data safely
+    /// </summary>
     [Serializable]
     public partial class Step7ProjectV20
     {
@@ -1280,7 +1281,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
         }
 
         public override void ExportTextlists(ProjectFolder folder, string exportPath)
-        {         
+        {
             foreach (var d in tiapProject.Devices)
             {
                 if (d.TypeIdentifier != null && (d.TypeIdentifier.EndsWith(".S71500") || d.TypeIdentifier.EndsWith("ET200SP_OC")))
@@ -1297,7 +1298,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V20
                             foreach (var plcAlarmUserTextlist in PlcAlarmTextlistGroup.PlcAlarmUserTextlists)
                             {
                                 var plcAlarmUserTextlistName = plcAlarmUserTextlist.Name;
-                                var filePath = Path.Combine(exportPath, folder.Name, deviceItem.Name.Replace("-",""), "plcalarmtextlistgroup", plcAlarmUserTextlistName) + ".xlsx";
+                                var filePath = Path.Combine(exportPath, folder.Name, deviceItem.Name.Replace("-", ""), "plcalarmtextlistgroup", plcAlarmUserTextlistName) + ".xlsx";
                                 var fileInfo = new FileInfo(filePath);
 
                                 if (!Directory.Exists(fileInfo.DirectoryName))
