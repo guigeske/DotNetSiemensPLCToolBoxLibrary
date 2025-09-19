@@ -1540,11 +1540,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V19
                 fld4,
                 software.WatchAndForceTableGroup
             );
-
-            var units = software.GetService<PlcUnitProvider>().UnitGroup.Units;
-            foreach (var unit in units)
+            var unitProvider = software.GetService<PlcUnitProvider>();
+            if (unitProvider != null)
             {
-                LoadSoftwareUnitViaOpennessDlls(parent, unit);
+                var units = unitProvider.UnitGroup.Units;
+                foreach (var unit in units)
+                {
+                    LoadSoftwareUnitViaOpennessDlls(parent, unit);
+                }
             }
         }
 
