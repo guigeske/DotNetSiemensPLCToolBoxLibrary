@@ -29,11 +29,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibNoDaveConnectionLibrary\DotNetSiemensPLCToolBoxLibrary.csproj" />
+	<ProjectReference Include="..\..\DataCollectorConnect.Models\DataCollectorConnect.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="DataCollectorConnect.Models">
-      <HintPath>..\..\DataCollectorConnect.Models\bin\Debug\net481\DataCollectorConnect.Models.dll</HintPath>
-    </Reference>
     <Reference Include="Siemens.Engineering">
       <HintPath>..\externalDlls\siemens\V15.1\Siemens.Engineering.dll</HintPath>
     </Reference>
