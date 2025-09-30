@@ -45,6 +45,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
                     {
                         int pos1 = plcFunctionBlockRow.Parameter.IndexOf("[") + 1;
                         int pos2 = plcFunctionBlockRow.Parameter.IndexOf("]");
+                        if (pos1 > 0 || pos2 - pos1 > 0)
+                            continue;
                         string par = plcFunctionBlockRow.Parameter.Substring(pos1, pos2 - pos1);
                         if (parLst.ContainsKey(par))
                         {
