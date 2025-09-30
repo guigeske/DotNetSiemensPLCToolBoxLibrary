@@ -524,8 +524,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.PLCs.S7_xxx.MC7
                                 addRW.StringSize = Convert.ToInt32(tmpType.Substring(pos1 + 1, pos2 - pos1 - 2));
                             }
                             else
-                                addRW.DataType = (S7DataRowType)Enum.Parse(typeof(S7DataRowType), tmpType.Replace("\0", "").Replace("\t", "").Replace(";", "").Trim().ToUpper());
-
+                                addRW.DataType = (S7DataRowType)Enum.Parse(typeof(S7DataRowType), tmpType.Split(':')[0].Replace("\0", "").Replace("\t", "").Replace(";", "").Trim().ToUpper());
+                                
                             addRW.DataTypeBlockNumber = akRowTypeNumber;
 
                             if (tmpValue != "")
