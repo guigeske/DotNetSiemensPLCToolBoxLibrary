@@ -500,7 +500,13 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                         logger.Debug(tab + path + message.Description);
                 }
                 else if (message.State == CompilerResultState.Warning)
-                    logger.Warn(tab + path + message.Description);
+                {
+                    // Keep "Compiling finished" as INFO even if it has warnings
+                    if (message.Description != null && message.Description.Contains("Compiling finished"))
+                        logger.Info(tab + path + message.Description);
+                    else
+                        logger.Debug(tab + path + message.Description);
+                }
                 else if (message.State == CompilerResultState.Information)
                     logger.Debug(tab + path + message.Description);
 
