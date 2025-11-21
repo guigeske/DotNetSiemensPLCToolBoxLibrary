@@ -479,7 +479,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V14SP1
                         plc.PartNumber = GetPlcAttribute(deviceItem, "OrderNumber");
                         plc.PlcNetwork = new List<SiemensPlcSubnet>();
 
-                        logger.Info("---> PLC: " + this.Name + ":" + plc.SiemensPlcType);
+                        logger.Debug("---> PLC: " + this.Name + ":" + plc.SiemensPlcType);
 
                         foreach (DeviceItem item in deviceItem.Items)
                         {
@@ -570,7 +570,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V14SP1
                         );
                     }
 
-                    logger.Info("Communication Device: " + item.Name + " - " + plcSubnet.Interface);
+                    logger.Debug("Communication Device: " + item.Name + " - " + plcSubnet.Interface);
                     SiemensPlcNode.PrintNodeData(plcSubnet.PlcNodes[plcSubnet.PlcNodes.Count - 1]);
                 }
             }

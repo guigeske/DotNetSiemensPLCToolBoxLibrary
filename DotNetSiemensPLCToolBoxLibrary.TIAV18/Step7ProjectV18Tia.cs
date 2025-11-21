@@ -492,11 +492,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                 if (message.State == CompilerResultState.Error)
                     logger.Warn(tab + path + message.Description);
                 else if (message.State == CompilerResultState.Success)
-                    logger.Info(tab + path + message.Description);
+                {
+                    // Keep "Compiling finished" as INFO, all other Success messages as DEBUG
+                    if (message.Description != null && message.Description.Contains("Compiling finished"))
+                        logger.Info(tab + path + message.Description);
+                    else
+                        logger.Debug(tab + path + message.Description);
+                }
                 else if (message.State == CompilerResultState.Warning)
                     logger.Warn(tab + path + message.Description);
                 else if (message.State == CompilerResultState.Information)
-                    logger.Info(tab + path + message.Description);
+                    logger.Debug(tab + path + message.Description);
 
                 foreach (CompilerResultMessage msg in message.Messages)
                     PrintMessages(msg, tab + "  ");
@@ -651,7 +657,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                         plc.PartNumber = GetPlcAttribute(deviceItem, "OrderNumber");
                         plc.PlcNetwork = new List<SiemensPlcSubnet>();
 
-                        logger.Info("---> PLC: " + this.Name + ":" + plc.SiemensPlcType);
+                        logger.Debug("---> PLC: " + this.Name + ":" + plc.SiemensPlcType);
 
                         foreach (DeviceItem item in deviceItem.Items)
                         {
@@ -742,7 +748,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                         );
                     }
 
-                    logger.Info("Communication Device: " + item.Name + " - " + plcSubnet.Interface);
+                    logger.Debug("Communication Device: " + item.Name + " - " + plcSubnet.Interface);
                     SiemensPlcNode.PrintNodeData(plcSubnet.PlcNodes[plcSubnet.PlcNodes.Count - 1]);
                 }
             }
