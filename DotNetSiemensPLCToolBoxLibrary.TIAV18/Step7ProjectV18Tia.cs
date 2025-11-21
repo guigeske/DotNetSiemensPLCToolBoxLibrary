@@ -495,15 +495,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V18
                 {
                     // All Success messages including "Compiling finished" as DEBUG
                     logger.Debug(tab + path + message.Description);
-                    else
-                        logger.Debug(tab + path + message.Description);
                 }
                 else if (message.State == CompilerResultState.Warning)
                 {
                     // All Warning messages including "Compiling finished" as DEBUG
                     logger.Debug(tab + path + message.Description);
-                    else
-                        logger.Debug(tab + path + message.Description);
                 }
                 else if (message.State == CompilerResultState.Information)
                     logger.Debug(tab + path + message.Description);
