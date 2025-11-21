@@ -449,7 +449,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V16
 
             public override void CompileBlocks()
             {
-                logger.Info("  Compiling started");
+                logger.Debug("  Compiling started");
                 CompilerResult result;
 
                 var compiler = plcSoftware.GetService<ICompilable>();
@@ -483,17 +483,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles.V16
                     logger.Warn(tab + path + message.Description);
                 else if (message.State == CompilerResultState.Success)
                 {
-                    // Keep "Compiling finished" as INFO, all other Success messages as DEBUG
-                    if (message.Description != null && message.Description.Contains("Compiling finished"))
-                        logger.Info(tab + path + message.Description);
+                    // All Success messages including "Compiling finished" as DEBUG
+                    logger.Debug(tab + path + message.Description);
                     else
                         logger.Debug(tab + path + message.Description);
                 }
                 else if (message.State == CompilerResultState.Warning)
                 {
-                    // Keep "Compiling finished" as INFO even if it has warnings
-                    if (message.Description != null && message.Description.Contains("Compiling finished"))
-                        logger.Info(tab + path + message.Description);
+                    // All Warning messages including "Compiling finished" as DEBUG
+                    logger.Debug(tab + path + message.Description);
                     else
                         logger.Debug(tab + path + message.Description);
                 }
