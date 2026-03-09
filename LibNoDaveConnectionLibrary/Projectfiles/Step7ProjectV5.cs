@@ -39,7 +39,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
     {
         #region Object Type Constants
         // Object type identifiers used in Step7 V5 DBF databases (OBJTYP field in HOBJECT1.DBF)
-        // to classify hardware components and network interfaces.
+        // to classify hardware components and network interfaces.        
 
         /// <summary>Siemens S7-300 PLC station type identifier</summary>
         private const int objectType_Simatic300 = 1314969;
@@ -67,6 +67,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         /// <summary>Ethernet interface integrated in RTX CPU (e.g., 6ES7 611-4SB00-0YB7)</summary>
         private const int objectType_EternetInCPURTX = 2364315;
+
+        private const int objectType_Eternet319= 2364813;
+
+        private const int objectType_EternetPNIO = 2364589;
 
         /// <summary>MPI/DP (Multi Point Interface/Profibus) interface integrated in CPU</summary>
         private const int objectType_MpiDPinCPU = 1314972;
@@ -1283,29 +1287,59 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             pnMasterSystems.Add(x);
                             _allFolders.Add(x);
                         }
+
+                        // Store Ethernet interface hardware object IDs for CPUs
+                        // These IDs are used in next section to map to network configuration objects
+                        // Matches various Ethernet interface types integrated in CPUs
                         else if (objType == objectType_EternetInCPU3xxF ||
                             objType == objectType_EternetInCPU3xx ||
                             objType == objectType_EternetInCPU4xx ||
                             objType == objectType_EternetInCPU3xx_2 ||
-                            objType == objectType_EternetInCPURTX)
+                            objType == objectType_EternetInCPURTX ||
+                            objType == objectType_Eternet319 ||
+                            objType == objectType_EternetPNIO)
                         {
                             var cpu = CPUFolders.FirstOrDefault(x => x.ID == Convert.ToInt32(row["UNITID"]));
-                            if (cpu != null) cpu.IdTobjId = Convert.ToInt32(row["ID"]);
+
+                            if (cpu != null)
+                            {
+                                cpu.IdTobjId = Convert.ToInt32(row["ID"]);  // Store Ethernet interface hardware ID
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Step7ProjectV5.cs: Found Ethernet interface (ID={row["ID"]}) but no matching CPU with ID={row["UNITID"]}");
+                            }
                         }
+                        // Store Ethernet interface hardware object IDs for Communication Processors (CPs)
+                        // CPs can have multiple Ethernet interfaces, so IdTobjId is a list
+                        // Object types: 2364971 (CP343-1), 2367589 (CP443-1)
                         else if (objType == 2364971 || objType == 2367589)
                         {
                             var cp = CPFolders.FirstOrDefault(x => x.ID == (int)row["UNITID"]);
                             if (cp != null)
                             {
                                 if (cp.IdTobjId == null) cp.IdTobjId = new List<int>();
-                                cp.IdTobjId.Add((int)row["ID"]);
+                                cp.IdTobjId.Add((int)row["ID"]);  // Store Ethernet interface hardware ID
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Step7ProjectV5.cs: Found Ethernet interface (ID={row["ID"]}) but no matching CP with ID={row["UNITID"]}");
                             }
                         }
                     }
                 }
             }
 
-            //Link all PnMasterSystems to the Stations
+            // ===== Map Ethernet Interface IDs to Network Configuration Object IDs =====
+            // This critical step links Ethernet hardware interfaces (IdTobjId) to their network config objects (TobjId)
+            // The TobjId is later used in SECTION 20 to match network configurations from S7NONFGX.tab
+            //
+            // Data flow:
+            // 1. Previous section set: cpu.IdTobjId = Ethernet interface hardware ID (from s7hssiox/HOBJECT1.DBF)
+            // 2. This section reads: s7hssiox/HRELATI1.DBF with RELID=64 (network interface reference)
+            //    - SOBJID = Ethernet interface hardware ID (matches IdTobjId)
+            //    - TOBJID = Network configuration object ID
+            // 3. This section sets: cpu.TobjId = TOBJID (network config object ID for SECTION 20)
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hssiox" + _DirSeperator + "HRELATI1.DBF"))
             {
                 var lnkLst = new List<LinkHelp>();
@@ -1316,27 +1350,50 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 {
                     if (!(bool)row["DELETED_FLAG"] || _showDeleted)
                     {
+                        // RELID 64 = Network interface reference relationship
+                        // Links Ethernet interface hardware object (SOBJID) to network config object (TOBJID)
                         if (Convert.ToInt32(row["RELID"]) == 64)
                         {
-                            var cpu = CPUFolders.FirstOrDefault(x => x.IdTobjId == Convert.ToInt32(row["SOBJID"]));
-                            if (cpu != null) cpu.TobjId = Convert.ToInt32(row["TOBJID"]);
+                            int sobjId = Convert.ToInt32(row["SOBJID"]);  // Ethernet interface hardware ID
+                            int tobjId = Convert.ToInt32(row["TOBJID"]);  // Network configuration object ID
 
-                            var cp = CPFolders.FirstOrDefault(x => x.IdTobjId != null && x.IdTobjId.Any(c => c == (int)row["SOBJID"]));
+                            // Find CPU by Ethernet interface ID (set in previous section from HOBJECT1.DBF)
+                            var cpu = CPUFolders.FirstOrDefault(x => x.IdTobjId == sobjId);
+                            if (cpu != null)
+                            {
+                                cpu.TobjId = tobjId;  // Store network config object ID for SECTION 20
+                            }
+
+                            // Find CP by Ethernet interface ID (CPs can have multiple interfaces)
+                            var cp = CPFolders.FirstOrDefault(x => x.IdTobjId != null && x.IdTobjId.Any(c => c == sobjId));
                             if (cp != null)
                             {
                                 if (cp.TobjId == null) cp.TobjId = new List<int>();
-                                cp.TobjId.Add((int)row["TOBJID"]);
+                                cp.TobjId.Add(tobjId);  // Store network config object ID for SECTION 20
+                            }
+
+                            // Debug: Log if interface ID couldn't be mapped to any CPU/CP
+                            if (cpu == null && cp == null)
+                            {
+                                Console.WriteLine($"Step7ProjectV5.cs: RELID 64 - Could not map interface ID {sobjId} to network config {tobjId} (no matching CPU/CP with IdTobjId={sobjId})");
                             }
                         }
 
+                        // Store all relationships for linking Profinet Master Systems to Stations (next step)
                         lnkLst.Add(new LinkHelp() { SOBJID = (int)row["SOBJID"], SOBJTYP = (int)row["SOBJTYP"], RELID = (int)row["RELID"], TOBJID = (int)row["TOBJID"], TOBJTYP = (int)row["TOBJTYP"], TUNITID = (int)row["TUNITID"], TUNITTYP = (int)row["TUNITTYP"] });
                     }
                 }
+
+                // ===== Link Profinet Master Systems to their Parent Stations =====
+                // Uses relationship data to establish parent-child hierarchy
+                // ProfinetMasterSystem (SOBJID) → belongs to → Station (TOBJID)
                 foreach (StationConfigurationFolder station in stations)
                 {
+                    // Find all relationships where station is the target (TOBJID matches station ID and type)
                     var lnks = lnkLst.Where(x => x.TOBJTYP == station.ObjTyp && x.TOBJID == station.ID);
                     foreach (LinkHelp linkHelp in lnks)
                     {
+                        // Find Profinet Master System by source object ID
                         var ms = pnMasterSystems.FirstOrDefault(x => x.Id == linkHelp.SOBJID);
                         if (ms != null)
                         {
@@ -1543,7 +1600,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             // Uses binary pattern matching to locate configuration structures
             try
             {
-                // Read Ethernet interface configuration
+                // === ETHERNET NETWORK CONFIGURATION ===
+                // Parse S7Netze/S7NONFGX.tab binary file containing Ethernet interface configurations
+                // This file stores all network parameters for each Ethernet connection configured in the project
                 if (_ziphelper.FileExists(ProjectFolder + "S7Netze" + _DirSeperator + "S7NONFGX.tab"))
                 {
                     Stream hrsLink = _ziphelper.GetReadStream(ProjectFolder + "S7Netze" + _DirSeperator + "S7NONFGX.tab");
@@ -1553,12 +1612,32 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     rd.Close();
                     hrsLink.Close();
 
-                    // Network configuration binary structure:
-                    // - Starts with 0x03,0x52,0x14,0x00 + 4-byte object ID
-                    // - Contains attribute blocks: IP (0xE0,0x0F...), MAC (0xA2,0x0F...), Mask (0xE5,0x0F...), Router (0xE3,0x0F...)
-                    // - Each attribute: 8-byte header + 1-byte length + variable hex-encoded data
-                    // - Structure length ~1705 bytes per Ethernet interface
-                    // - IP addresses stored as hex strings (e.g., "C0A80001" = 192.168.0.1)
+                    // S7NONFGX.tab Binary Structure Overview:
+                    // ======================================
+                    // The file contains repeating structures, one per Ethernet interface (~1705 bytes each)
+                    //
+                    // Each interface structure contains:
+                    //   1. Structure Header: 0x03,0x52,0x14,0x00 + 4-byte object ID (TobjId)
+                    //   2. Multiple Attribute Blocks (IP, MAC, Mask, Router, etc.)
+                    //
+                    // Attribute Block Format:
+                    //   - 8-byte marker/header (identifies attribute type)
+                    //   - Metadata bytes
+                    //   - 1-byte length indicator at offset +19
+                    //   - Variable-length data at offset +20 (typically hex-encoded ASCII)
+                    //   - Note: Some attributes also have raw binary data at offset +12 to +15
+                    //
+                    // Example: IP Address Attribute
+                    //   Offset +0 to +7:   0xE0,0x0F,0x00,0x00,0xE0,0x0F,0x00,0x00 (marker)
+                    //   Offset +12 to +15: C0 A8 00 01 (raw IP bytes: 192.168.0.1)
+                    //   Offset +19:        08 (length = 8 bytes)
+                    //   Offset +20 to +27: "C0A80001" (hex-encoded ASCII string)
+                    //
+                    // Mapping to PLC:
+                    //   - Object ID at structure start links to CPU.TobjId or CP.TobjId
+                    //   - If direct mapping fails, fallback uses network interface link pattern
+
+                    // Search patterns for text attributes
                     char[] searchValid = { 'A', 'd', 'd', 'r', 'e', 's', 's', 'I', 's', 'V', 'a', 'l', 'i', 'd' };
                     byte[] searchName = { (byte)'B', (byte)'a', (byte)'u', (byte)'g', (byte)'r', (byte)'u', (byte)'p', (byte)'p', (byte)'e', (byte)'n', (byte)'n', (byte)'a', (byte)'m', (byte)'e' };
 
@@ -1567,15 +1646,19 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     byte[] startMAC = { 0xA2, 0x0F, 0x00, 0x00, 0xA2, 0x0F, 0x00, 0x00 };
                     byte[] startMask = { 0xE5, 0x0F, 0x00, 0x00, 0xE5, 0x0F, 0x00, 0x00 };
                     byte[] startRouter = { 0xE3, 0x0F, 0x00, 0x00, 0xE3, 0x0F, 0x00, 0x00 };
-                    byte[] startUseRouter = { 0xE8, 0x0F, 0x00, 0x00, 0xE8, 0x0F, 0x00, 0x00 };
-                    byte[] startUseIP = { 0xEA, 0x0F, 0x00, 0x00, 0xEA, 0x0F, 0x00, 0x00 };
-                    byte[] startUseMac = { 0xED, 0x0F, 0x00, 0x00, 0xED, 0x0F, 0x00, 0x00 };
+                    byte[] startUseRouter = { 0xE8, 0x0F, 0x00, 0x00, 0xE8, 0x0F, 0x00, 0x00 };      // "Use Router" boolean flag marker
+                    byte[] startUseIP = { 0xEA, 0x0F, 0x00, 0x00, 0xEA, 0x0F, 0x00, 0x00 };          // "Use IP" protocol boolean flag marker
+                    byte[] startUseMac = { 0xED, 0x0F, 0x00, 0x00, 0xED, 0x0F, 0x00, 0x00 };         // "Use MAC" boolean flag marker
+                    byte[] startNetworkInterfaceLink = { 0x10, 0x14, 0x00 };                         // Network interface link pattern (fallback mapping)
+
                     int position = 0;
-                    int lenStructure = 1705;// 1960;  //I don't think this len is correct... (look)
+                    int lenStructure = 1705; // Approximate length of each Ethernet interface structure (~1705 bytes, may vary)
                     while ((position = indexOfByteArray(completeBuffer, startStructure, position + 1, lengthFile)) >= 0)
                     {
-                        int number = BitConverter.ToInt32(completeBuffer, position + 4);//or ToInt16
-                        //Debug.Print(number.ToString());
+                        // Extract object ID from structure header (4 bytes after startStructure marker)
+                        int number = BitConverter.ToInt32(completeBuffer, position + 4);
+
+                        // Map interface to PLC using object ID (TobjId)
                         var cp = CPFolders.FirstOrDefault(x => x.TobjId != null && x.TobjId.Any(y => y == number));
                         var cpu = CPUFolders.FirstOrDefault(x => x.TobjId == number);
                         EthernetNetworkInterface ethernet = new EthernetNetworkInterface();
@@ -1589,7 +1672,6 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             if (cpu.NetworkInterfaces == null) cpu.NetworkInterfaces = new List<NetworkInterface>();
                             cpu.NetworkInterfaces.Add(ethernet);
                         }
-                        else continue;
 
                         int pos = indexOfByteArray(completeBuffer, searchName, position, lenStructure);
                         if (pos > 0)
@@ -1606,17 +1688,29 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                             }
                         }
 
+                        // Extract IP Address from binary structure
+                        // Binary layout after startIP marker (0xE0 0x0F 0x00 0x00 0xE0 0x0F 0x00 0x00):
+                        //   Offset +0 to +7:   startIP pattern (marker bytes)
+                        //   Offset +8 to +11:  Metadata/padding
+                        //   Offset +12 to +15: IP address as 4 raw bytes (e.g., C0 A8 00 01 = 192.168.0.1)
+                        //   Offset +16 to +18: Additional metadata
+                        //   Offset +19:        Length of hex string (typically 8)
+                        //   Offset +20 to +X:  IP as hex-encoded ASCII string (e.g., "C0A80001" = 192.168.0.1)
                         pos = indexOfByteArray(completeBuffer, startIP, position, lenStructure);
                         if (pos > 0)
                         {
                             try
                             {
+                                // Read IP as hex-encoded ASCII string from offset +20
+                                // Length stored in byte at offset +19 (typically 8 bytes for IPv4)
                                 string strIP = System.Text.Encoding.Default.GetString(completeBuffer, pos + 20, (int)completeBuffer[pos + 19]);
+
+                                // Parse hex string to IP octets: "C0A80001" → [192, 168, 0, 1]
                                 byte[] bIP = new byte[4];
-                                bIP[0] = byte.Parse(strIP.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                                bIP[1] = byte.Parse(strIP.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                                bIP[2] = byte.Parse(strIP.Substring(4, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
-                                bIP[3] = byte.Parse(strIP.Substring(6, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+                                bIP[0] = byte.Parse(strIP.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier); // First octet
+                                bIP[1] = byte.Parse(strIP.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier); // Second octet
+                                bIP[2] = byte.Parse(strIP.Substring(4, 2), System.Globalization.NumberStyles.AllowHexSpecifier); // Third octet
+                                bIP[3] = byte.Parse(strIP.Substring(6, 2), System.Globalization.NumberStyles.AllowHexSpecifier); // Fourth octet
 
                                 ethernet.IpAddress = new System.Net.IPAddress(bIP);
                             }
@@ -1625,13 +1719,18 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 Console.WriteLine("3 Step7ProjectV5.cs threw exception");
                             }
                         }
+                        // Extract MAC Address from binary structure
+                        // Binary layout same as IP: [8-byte marker] + [metadata] + [length at +19] + [hex string at +20]
+                        // MAC stored as hex string without separators (e.g., "0800200A0B0C")
                         pos = indexOfByteArray(completeBuffer, startMAC, position, lenStructure);
                         if (pos > 0)
                         {
                             try
                             {
+                                // Read MAC as hex-encoded ASCII string (12 characters = 6 bytes)
                                 string strMAC = System.Text.Encoding.Default.GetString(completeBuffer, pos + 20, (int)completeBuffer[pos + 19]);
 
+                                // Parse hex string to MAC address: "0800200A0B0C" → 08:00:20:0A:0B:0C
                                 ethernet.Mac = System.Net.NetworkInformation.PhysicalAddress.Parse(strMAC);
                             }
                             catch
@@ -1639,12 +1738,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 Console.WriteLine("4 Step7ProjectV5.cs threw exception");
                             }
                         }
+                        // Extract Subnet Mask from binary structure
+                        // Binary layout same as IP: hex-encoded string at offset +20
                         pos = indexOfByteArray(completeBuffer, startMask, position, lenStructure);
                         if (pos > 0)
                         {
                             try
                             {
+                                // Read subnet mask as hex string (e.g., "FFFFFF00" = 255.255.255.0)
                                 string strMask = System.Text.Encoding.Default.GetString(completeBuffer, pos + 20, (int)completeBuffer[pos + 19]);
+
+                                // Parse hex string to subnet mask octets
                                 byte[] bIP = new byte[4];
                                 bIP[0] = byte.Parse(strMask.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
                                 bIP[1] = byte.Parse(strMask.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
@@ -1658,17 +1762,24 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 Console.WriteLine("5 Step7ProjectV5.cs threw exception");
                             }
                         }
+
+                        // Extract Default Router/Gateway address from binary structure
+                        // Binary layout same as IP: hex-encoded string at offset +20
                         pos = indexOfByteArray(completeBuffer, startRouter, position, lenStructure);
                         if (pos > 0)
                         {
                             try
                             {
+                                // Read router IP as hex string (e.g., "C0A80001" = 192.168.0.1)
                                 string strRouter = System.Text.Encoding.Default.GetString(completeBuffer, pos + 20, (int)completeBuffer[pos + 19]);
+
+                                // Parse hex string to router IP octets
                                 byte[] bIP = new byte[4];
                                 bIP[0] = byte.Parse(strRouter.Substring(0, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
                                 bIP[1] = byte.Parse(strRouter.Substring(2, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
                                 bIP[2] = byte.Parse(strRouter.Substring(4, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
                                 bIP[3] = byte.Parse(strRouter.Substring(6, 2), System.Globalization.NumberStyles.AllowHexSpecifier);
+
                                 ethernet.Router = new System.Net.IPAddress(bIP);
                             }
                             catch
@@ -1676,6 +1787,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 Console.WriteLine("6 Step7ProjectV5.cs threw exception");
                             }
                         }
+                        // Extract UseRouter flag (boolean indicating if router/gateway is used)
+                        // Boolean stored as single byte at offset +19
                         pos = indexOfByteArray(completeBuffer, startUseRouter, position, lenStructure);
                         if (pos > 0)
                         {
@@ -1688,6 +1801,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 Console.WriteLine("7 Step7ProjectV5.cs threw exception");
                             }
                         }
+
+                        // Extract UseIP flag (boolean indicating if IP protocol is enabled)
+                        // Boolean stored as single byte at offset +19
                         pos = indexOfByteArray(completeBuffer, startUseIP, position, lenStructure);
                         if (pos > 0)
                         {
