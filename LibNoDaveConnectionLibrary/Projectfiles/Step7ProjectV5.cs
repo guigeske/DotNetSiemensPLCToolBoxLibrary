@@ -1,3 +1,21 @@
+/*
+ * Step7ProjectV5.cs - Parser for Siemens Step7 V5 PLC Projects
+ *
+ * This class provides comprehensive parsing of Step7 V5 project files (.s7p, .s7l),
+ * including support for zipped project archives. It extracts:
+ * - Hardware configurations (Stations, CPUs, Communication Processors)
+ * - Network configurations (Ethernet, Profibus, MPI)
+ * - Program structures (blocks, symbols, source files)
+ * - Security settings (CPU passwords)
+ *
+ * The parser reads proprietary DBF database files and binary configuration files
+ * within the Step7 project structure, building a complete object model of the
+ * PLC system configuration.
+ *
+ * The parser uses lazy loading for performance - project structure is only
+ * parsed when properties like CPUFolders or S7ProgrammFolders are first accessed.
+ */
+
 using DotNetSiemensPLCToolBoxLibrary.DataTypes;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Hardware.Step7V5;
 using DotNetSiemensPLCToolBoxLibrary.DataTypes.Network;
@@ -12,33 +30,76 @@ using System.Text;
 
 namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 {
+    /// <summary>
+    /// Represents a Siemens Step7 V5 project and provides access to its complete structure.
+    /// Supports both file system and ZIP-based projects with lazy loading of project components.
+    /// Implements IDisposable to properly clean up ZIP file handles.
+    /// </summary>
     public class Step7ProjectV5 : Project, IDisposable
     {
-        //types object
+        #region Object Type Constants
+        // Object type identifiers used in Step7 V5 DBF databases (OBJTYP field in HOBJECT1.DBF)
+        // to classify hardware components and network interfaces.
+
+        /// <summary>Siemens S7-300 PLC station type identifier</summary>
         private const int objectType_Simatic300 = 1314969;
 
+        /// <summary>Siemens S7-400 PLC station type identifier</summary>
         private const int objectType_Simatic400 = 1314970;
+
+        /// <summary>Siemens S7-400H redundant PLC station type identifier</summary>
         private const int objectType_Simatic400H = 1315650;
+
+        /// <summary>Siemens RTX distributed I/O station type identifier</summary>
         private const int objectType_SimaticRTX = 1315651;
+
+        /// <summary>Ethernet interface integrated in S7-300 series CPU</summary>
         private const int objectType_EternetInCPU3xx = 2364796;
-        private const int objectType_EternetInCPU3xx_2 = 2364572; //Alternative type e.g. 6ES7 318-3EL00-0AB0 (Only one port).
+
+        /// <summary>Ethernet interface integrated in S7-300 series CPU (alternative type, e.g., 6ES7 318-3EL00-0AB0 with single port)</summary>
+        private const int objectType_EternetInCPU3xx_2 = 2364572;
+
+        /// <summary>Ethernet interface integrated in S7-300F fail-safe CPU</summary>
         private const int objectType_EternetInCPU3xxF = 2364818;
+
+        /// <summary>Ethernet interface integrated in S7-400 series CPU</summary>
         private const int objectType_EternetInCPU4xx = 2364763;
-        private const int objectType_EternetInCPURTX = 2364315; // E.g. 6ES7 611-4SB00-0YB7
+
+        /// <summary>Ethernet interface integrated in RTX CPU (e.g., 6ES7 611-4SB00-0YB7)</summary>
+        private const int objectType_EternetInCPURTX = 2364315;
+
+        /// <summary>MPI/DP (Multi Point Interface/Profibus) interface integrated in CPU</summary>
         private const int objectType_MpiDPinCPU = 1314972;
+
+        /// <summary>MPI/DP interface module for S7-400 series</summary>
         private const int objectType_MpiDP400 = 1315038;
+
+        /// <summary>MPI/DP interface module for S7-300 series</summary>
         private const int objectType_MpiDP300 = 1315016;
 
+        #endregion
+
+        #region Private Fields
+
+        /// <summary>Path to the offline block database file (BSTCNTOF.DBF)</summary>
         private string _offlineblockdb;
 
+        /// <summary>Flag to include deleted items (marked as deleted in DBF tables) in the project structure</summary>
         internal bool _showDeleted = false;
 
-        //Zipfile is used as Object, because SharpZipLib is not available on every platform!
+        /// <summary>
+        /// ZIP file handler for compressed project archives.
+        /// Abstracts access to both file system and ZIP-based projects.
+        /// </summary>
         internal ZipHelper _ziphelper = new ZipHelper(null);
 
-        //When a Zip File is used, here is the s7p name!
+        /// <summary>Name of the .s7p or .s7l project file (or its path within a ZIP archive)</summary>
         internal string _projectfilename;
 
+        /// <summary>
+        /// Gets the appropriate directory separator based on whether the project is zipped.
+        /// Returns '/' for ZIP files, platform-specific separator for file system.
+        /// </summary>
         internal char _DirSeperator
         {
             get
@@ -50,10 +111,25 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             }
         }
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new Step7 V5 project from a file path.
+        /// </summary>
+        /// <param name="projectfile">Path to .s7p, .s7l, or .zip file containing the project</param>
+        /// <param name="showDeleted">If true, includes deleted items marked in the project database</param>
         public Step7ProjectV5(string projectfile, bool showDeleted)
             : this(projectfile, showDeleted, null)
         { }
 
+        /// <summary>
+        /// Initializes a new Step7 V5 project from a file path with custom text encoding.
+        /// </summary>
+        /// <param name="projectfile">Path to .s7p, .s7l, or .zip file containing the project</param>
+        /// <param name="showDeleted">If true, includes deleted items marked in the project database</param>
+        /// <param name="prEn">Text encoding for project strings. If null, detected from Global/Language file or defaults to ISO-8859-1</param>
         public Step7ProjectV5(string projectfile, bool showDeleted, Encoding prEn)
         {
             _projectfilename = projectfile;
@@ -101,6 +177,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             LoadProjectHeader(showDeleted);
         }
 
+        /// <summary>
+        /// Initializes a new Step7 V5 project from a stream (typically a ZIP archive).
+        /// </summary>
+        /// <param name="projectfile">Stream containing a zipped Step7 project</param>
+        /// <param name="showDeleted">If true, includes deleted items marked in the project database</param>
+        /// <param name="prEn">Text encoding for project strings. If null, detected from Global/Language file or defaults to ISO-8859-1</param>
         public Step7ProjectV5(Stream projectfile, bool showDeleted, Encoding prEn)
         {
             this._ziphelper = ZipHelper.GetZipHelper(projectfile);
@@ -140,17 +222,25 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             LoadProjectHeader(showDeleted);
         }
 
+        #endregion
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// Loads basic project metadata (name, description) from the .s7p/.s7l header.
+        /// Also determines the offline block database path.
+        /// </summary>
+        /// <param name="showDeleted">If true, includes deleted items in subsequent parsing</param>
         private void LoadProjectHeader(bool showDeleted)
         {
             _showDeleted = showDeleted;
 
-            //Projekt Infos auslesen
-            //FileStream fsProject = new FileStream(ProjectFile, FileMode.Open, FileAccess.Read, System.IO.FileShare.ReadWrite);
+            // Read project information from the .s7p/.s7l header file
             Stream fsProject = _ziphelper.GetReadStream(_projectfilename);
 
-            //Anzahl der Bytes auslesen..
+            // Read number of bytes from the project file
             byte[] projectFile = new byte[_ziphelper.GetStreamLength(_projectfilename, fsProject)];
-            fsProject.Read(projectFile, 0, projectFile.Length);//Convert.ToInt32(fsProject.Length));
+            fsProject.Read(projectFile, 0, projectFile.Length);
             fsProject.Close();
 
             ProjectName = Encoding.UTF7.GetString(projectFile, 5, projectFile[4]);
@@ -158,11 +248,19 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             int descStart = 5 + projectFile[4] + 2;
             int descCount = Math.Min(projectFile[projectFile[4] + 6], projectFile.Length - 1 - descStart);
             ProjectDescription = Encoding.UTF7.GetString(projectFile, descStart, descCount);
-            //Fertig
+            // Finished reading project header
 
             _offlineblockdb = ProjectFolder + "ombstx" + _DirSeperator + "offline" + _DirSeperator + "BSTCNTOF.DBF";
         }
 
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Returns a string representation of the project including ZIP and deleted item flags.
+        /// </summary>
+        /// <returns>Project name with optional "(zipped)" and "(show deleted)" indicators</returns>
         public override string ToString()
         {
             string retVal = base.ToString();
@@ -175,11 +273,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         internal bool hasChanges;
 
+        /// <summary>
+        /// Finalizer to ensure ZIP file handles are released if Dispose is not called.
+        /// </summary>
         ~Step7ProjectV5()
         {
             Dispose();
         }
 
+        /// <summary>
+        /// Releases ZIP file resources. Should be called when finished with the project.
+        /// </summary>
         public void Dispose()
         {
             if (hasChanges)
@@ -190,6 +294,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             if (_ziphelper != null)
                 _ziphelper.Close();
         }
+
+        #endregion
+
+        #region Public Properties
 
         /*
         private Step7ProjectFolder _step7ProjectStructure;
@@ -208,6 +316,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         private List<CPUFolder> _cpuFolders;
 
+        /// <summary>
+        /// Gets the list of CPU folders found in the project (S7-300, S7-400, ET200S).
+        /// Triggers lazy loading of the complete project structure on first access.
+        /// </summary>
         public List<CPUFolder> CPUFolders
         {
             get
@@ -221,6 +333,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         private List<CPFolder> _cpFolders;
 
+        /// <summary>
+        /// Gets the list of Communication Processor (CP) folders found in the project.
+        /// CPs handle network communication (Ethernet, Profibus, etc.).
+        /// Triggers lazy loading of the complete project structure on first access.
+        /// </summary>
         public List<CPFolder> CPFolders
         {
             get
@@ -234,6 +351,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         private List<S7ProgrammFolder> _s7ProgrammFolders;
 
+        /// <summary>
+        /// Gets the list of S7 program folders containing PLC programs and blocks.
+        /// Triggers lazy loading of the complete project structure on first access.
+        /// </summary>
         public List<S7ProgrammFolder> S7ProgrammFolders
         {
             get
@@ -247,6 +368,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
         private List<BlocksOfflineFolder> _blocksOfflineFolders;
 
+        /// <summary>
+        /// Gets the list of offline block folders containing compiled PLC blocks (FC, FB, DB, etc.).
+        /// Triggers lazy loading of the complete project structure on first access.
+        /// </summary>
         public List<BlocksOfflineFolder> BlocksOfflineFolders
         {
             get
@@ -258,15 +383,31 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             set { _blocksOfflineFolders = value; }
         }
 
+        /// <summary>
+        /// Gets the project type identifier.
+        /// </summary>
+        /// <returns>Always returns ProjectType.Step7 for Step7 V5 projects</returns>
         public override ProjectType ProjectType
         {
             get { return ProjectType.Step7; }
         }
 
+        #endregion
+
+        #region Project Loading
+
+        /// <summary>
+        /// Performs the actual project parsing by reading DBF databases and binary files.
+        /// Called automatically on first property access due to lazy loading pattern.
+        /// Parses hardware structure, network configurations, program blocks, and symbol tables.
+        /// </summary>
         protected override void LoadProject()
         {
             _projectLoaded = true;
 
+            // ===== SECTION 1: Initialize Collections =====
+            // Initialize collections for parsed project components
+            // Collections will be populated as we traverse the DBF database relationships
             ProjectStructure = new Step7ProjectFolder() { Project = this };
             CPUFolders = new List<CPUFolder>();
             CPFolders = new List<CPFolder>();
@@ -277,8 +418,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
             var stations = new List<StationConfigurationFolder>();
 
-            List<CPFolder> DPFolders = new List<CPFolder>();//ProfiBusDP and MPI
-            //Get The Project Stations...
+            List<CPFolder> DPFolders = new List<CPFolder>();
+
+            // ===== SECTION 2: Parse Stations =====
+            // Parse station configurations (S7-300, S7-400, S7-400H, RTX) from hOmSave7/s7hstatx/HOBJECT1.DBF
+            // Stations are the top-level hardware containers that hold CPUs and other modules
+            // Also collect MPI/DP interface objects for later linking to CPUs
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hstatx" + _DirSeperator + "HOBJECT1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hstatx" + _DirSeperator + "HOBJECT1.DBF", _ziphelper, _DirSeperator);
@@ -332,7 +477,9 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get The HW Folder for the Station...
+            // ===== SECTION 3: Link Hardware to Stations =====
+            // Establish relationships between MPI/DP interfaces and stations using HRELATI1.DBF
+            // Relationship ID 1315820 indicates MPI/DP interface ownership
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hstatx" + _DirSeperator + "HRELATI1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hstatx" + _DirSeperator + "HRELATI1.DBF", _ziphelper, _DirSeperator);
@@ -398,7 +545,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             }
             */
 
-            //Get The CPs...
+            // ===== SECTION 4: Parse Communication Processors =====
+            // Parse CP (Communication Processor) modules from s7wb53ax and s7w1105x databases
+            // CPs handle network communication (Ethernet, Profibus, etc.)
+            // Build parent-child relationships for sub-modules using SubModulNumber
             string cp300Base = ProjectFolder + "hOmSave7" + _DirSeperator + "s7wb53ax" + _DirSeperator;
             string cp400Base = ProjectFolder + "hOmSave7" + _DirSeperator + "s7w1105x" + _DirSeperator;
 
@@ -442,7 +592,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 if (parent != null) parent.SubModul = cp;
             }
 
-            //Get The CP Folders
+            // ===== SECTION 5: Link CPs to Stations =====
+            // Link parsed CPs to their parent stations using HRELATI1.DBF relationships
+            // RELID 1315827: CP belongs to station
+            // RELID 64: CP network interface references
             List<string> cpFolderPaths = new List<string>();
             string cp300Folder = cp300Base + "HRELATI1.DBF";
             if (_ziphelper.FileExists(cp300Folder))
@@ -481,7 +634,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get The CPU 300 Folders
+            // ===== SECTION 6: Parse CPU Folders =====
+            // Parse CPU folders from multiple hardware databases (s7hk31ax, s7hkcomx, s7hk41ax)
+            // Each CPU type (S7-300, ET200S, S7-400) is stored in a separate database folder
+            // Special handling for S7-400H redundant systems (backup CPU object type 1315656)
+
+            // Get The CPU 300 Folders
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk31ax" + _DirSeperator + "HRELATI1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk31ax" + _DirSeperator + "HRELATI1.DBF", _ziphelper, _DirSeperator);
@@ -580,7 +738,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get The CPU Order number (MLFB)
+            // ===== SECTION 7: Extract CPU Hardware Information (MLFB) =====
+            // Extract CPU order numbers (MLFB) from binary .s7h files
+            // Uses pattern matching to find CPU module information in hardware configuration
+            // The MLFB (ordering number) identifies the exact CPU model (e.g., 6ES7 318-3EL00-0AB0)
             foreach (var y in CPUFolders)
             {
                 try
@@ -596,7 +757,13 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     rd.Close();
                     s7h.Close();
 
-                    // Byte sequence before information about each slot on the rack.
+                    // CPU MLFB (ordering number) extraction algorithm:
+                    // 1. Search for magic byte sequences that precede hardware slot definitions
+                    // 2. Different CPU types use different byte patterns (0x0a/0x0c/0x09 + 0x00 0x03)
+                    // 3. Filter matches to first 2000 bytes (MLFB appears early in file)
+                    // 4. Second match typically contains CPU information (first is power supply/rack)
+                    // 5. Parse three text fields with lengths stored in byte immediately before each field
+                    // 6. Extract CPU MLFB (e.g., "6ES7 318-3EL00-0AB0")
                     string[] checkSequences = {
                         ASCIIEncoding.ASCII.GetString(new byte[] { 0x0a, 0x00, 0x03 }),// 319-3 (EL00/01), 317-2DP
                         ASCIIEncoding.ASCII.GetString(new byte[] { 0x0c, 0x00, 0x03 }),// 317T-3 PN/DP
@@ -644,7 +811,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get The CPU(ET200S)...
+            // ===== SECTION 8: Parse CPU Details =====
+            // Load CPU names, rack/slot positions from HOBJECT1.DBF files
+            // Separate databases for different CPU types (ET200S, S7-300, S7-400)
+
+            // Get The CPU (ET200S)
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hkcomx" + _DirSeperator + "HOBJECT1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hkcomx" + _DirSeperator + "HOBJECT1.DBF", _ziphelper, _DirSeperator);
@@ -698,7 +869,13 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Get The CPU(300) password
+            // ===== SECTION 9: Decrypt CPU Passwords =====
+            // Extract and decrypt CPU protection passwords from HATTRME1.DBF
+            // Passwords are XOR-encrypted with 0xAA in the project database
+            // ATTRIIDM 111142 indicates password attribute
+            // Only decrypts read/write protection passwords (not all protection levels)
+
+            // Get The CPU (300) password
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk31ax" + _DirSeperator + "HATTRME1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk31ax" + _DirSeperator + "HATTRME1.DBF", _ziphelper, _DirSeperator);
@@ -715,7 +892,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
 
                             if (memoarray.Length >= 12)
                             {
-                                // memoarray[3] : level password (1-3)
+                                // Password decryption algorithm (XOR-based):
+                                // - memoarray[3] contains password level (1-3)
+                                // - First 2 bytes: XOR with 0xAA
+                                // - Remaining bytes: XOR with (byte at i+2) XOR (byte at i+4) XOR 0xAA
+                                // - Result is 8-byte password string
                                 byte[] mempass = new byte[8];
                                 for (int i = 0; i < 8; i++)
                                 {
@@ -778,7 +959,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                                 memoarray = (byte[])row["MEMOARRAYM"];
                             if (memoarray.Length >= 12)
                             {
-                                // memoarray[3] : level password (1-3)
+                                // Password decryption algorithm (XOR-based):
+                                // - memoarray[3] contains password level (1-3)
+                                // - First 2 bytes: XOR with 0xAA
+                                // - Remaining bytes: XOR with (byte at i+2) XOR (byte at i+4) XOR 0xAA
+                                // - Result is 8-byte password string
                                 byte[] mempass = new byte[8];
                                 for (int i = 0; i < 8; i++)
                                 {
@@ -799,8 +984,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
+            // ===== SECTION 10: Parse Program Folders =====
+            // Load S7 program folders from hrs/S7RESOFF.DBF
+            // Program folders contain the actual PLC code blocks
+            // RSRVD4_L field contains offset into link file for folder relationships
             var tmpS7ProgrammFolders = new List<S7ProgrammFolder>();
-            //Get all Program Folders
             if (_ziphelper.FileExists(ProjectFolder + "hrs" + _DirSeperator + "S7RESOFF.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hrs" + _DirSeperator + "S7RESOFF.DBF", _ziphelper, _DirSeperator);
@@ -821,7 +1009,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Combine Folder and CPU (300)
+            // ===== SECTION 11: Link Programs to CPUs =====
+            // Establish CPU-to-program-folder relationships using HRELATI1.DBF
+            // RELID 16 indicates program folder belongs to CPU
+            // Process separately for S7-300, ET200S, and S7-400 CPUs
+
+            // Combine Folder and CPU (300)
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk31ax" + _DirSeperator + "HRELATI1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hk31ax" + _DirSeperator + "HRELATI1.DBF", _ziphelper, _DirSeperator);
@@ -921,14 +1114,18 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Add the BlockFolders without CPU to the Ground project
+            // ===== SECTION 12: Add Orphaned Programs =====
+            // Add program folders not linked to any CPU to the root project structure
+            // This handles edge cases and malformed projects
             foreach (var z in tmpS7ProgrammFolders)
             {
                 z.Parent = ProjectStructure;
                 ProjectStructure.SubItems.Add(z);
             }
 
-            //Get Symbol Tables
+            // ===== SECTION 13: Parse Symbol Tables =====
+            // Load symbol tables (variable name mappings) for each program folder
+            // Symbol tables map symbolic names to PLC addresses
             foreach (var z in S7ProgrammFolders)
             {
                 var symtab = _GetSymTabForProject(z, this._showDeleted);
@@ -941,8 +1138,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
+            // ===== SECTION 14: Parse Block Folders =====
+            // Create offline block folders from ombstx/offline/BSTCNTOF.DBF
+            // Block folders contain compiled PLC blocks (FC, FB, DB, etc.)
             var tmpBlocksOfflineFolders = new List<BlocksOfflineFolder>();
-            //Create the Programm Block folders...
             if (_ziphelper.FileExists(ProjectFolder + "ombstx" + _DirSeperator + "offline" + _DirSeperator + "BSTCNTOF.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "ombstx" + _DirSeperator + "offline" + _DirSeperator + "BSTCNTOF.DBF", _ziphelper, _DirSeperator);
@@ -963,8 +1162,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
+            // ===== SECTION 15: Parse Source Folders =====
+            // Create source code folders from s7asrcom/S7CNTREF.DBF
+            // Source folders contain AWL/STL source files before compilation
             var Step7ProjectTypeStep7Sources = new List<SourceFolder>();
-            //Create the Source Block folders...
             if (_ziphelper.FileExists(ProjectFolder + "s7asrcom" + _DirSeperator + "S7CNTREF.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "s7asrcom" + _DirSeperator + "S7CNTREF.DBF", _ziphelper, _DirSeperator);
@@ -984,9 +1185,13 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
+            // ===== SECTION 16: Parse Profibus Networks =====
+            // Parse Profibus DP master systems and nodes from S7HDPSSX databases
+            // Profibus is a fieldbus protocol for industrial automation
+            // Links master systems to stations and enumerates connected nodes
             var pbMasterSystems = new List<ProfibusMasterSystem>();
 
-            //Get all Profibus Master Systems
+            // Get all Profibus Master Systems
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "S7HDPSSX" + _DirSeperator + "HOBJECT1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "S7HDPSSX" + _DirSeperator + "HOBJECT1.DBF", _ziphelper, _DirSeperator);
@@ -1056,9 +1261,13 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
+            // ===== SECTION 17: Parse Profinet Networks =====
+            // Parse Profinet IO master systems and devices from s7hssiox databases
+            // Profinet is industrial Ethernet protocol
+            // Links Ethernet interfaces in CPUs and CPs to network objects
             var pnMasterSystems = new List<ProfinetMasterSystem>();
 
-            //Get all Profibus Master Systems
+            // Get all Profinet Master Systems
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hssiox" + _DirSeperator + "HOBJECT1.DBF"))
             {
                 var dbfTbl = DBF.ParseDBF.ReadDBF(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hssiox" + _DirSeperator + "HOBJECT1.DBF", _ziphelper, _DirSeperator);
@@ -1180,13 +1389,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                 }
             }
 
-            //Infos about Link file hrs\linkhrs.lnk
-            //Size of a Structure in the Link File: 512 bytes
-            //Offset of Linkfile is in hrs\S7RESOFF.DBF, Filed 12 (RSRVD3_L)
-            //after 0x04, 0x20, 0x11 follows the Step7ProjectBlockFolder ID (2 Bytes) or maybe the source folder id
-            //after 0x01, 0x60, 0x11, 0x00 follows the Step7Programm ID (2 Bytes)
-
-            //Create the Link BlocksOfflineFolder Folder with S7ProgrammFolders...
+            // ===== SECTION 18: Link Programs to Blocks via Link File =====
+            // Parse hrs/linkhrs.lnk binary file to establish program-to-block-folder relationships
+            // Link file contains 512-byte structures with folder ID mappings
+            // Offset of link structure is in hrs\S7RESOFF.DBF, Field RSRVD4_L
+            // Byte pattern 0x01,0x60,0x11,0x00 precedes block folder ID (2 bytes)
+            // Byte pattern 0x04,0x20,0x11 precedes source folder ID (2 bytes)
             if (_ziphelper.FileExists(ProjectFolder + "hrs" + _DirSeperator + "linkhrs.lnk"))
             {
                 //FileStream hrsLink = new FileStream(ProjectFolder + "hrs" + _DirSeperator + "linkhrs.lnk", FileMode.Open, FileAccess.Read, System.IO.FileShare.ReadWrite);
@@ -1265,7 +1473,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     ProjectStructure.SubItems.Add(x);
                 }
             }
-            //Get The ProfiBus and MPI
+
+            // ===== SECTION 19: Parse MPI/DP Hardware =====
+            // Load MPI/Profibus interface configurations from s7hkdmax databases
+            // Creates DpHelp objects for MPI/Profibus interfaces
+            // RELID 1315837 links to hardware, RELID 64 provides address information
             List<DpHelp> DPlist = new List<DpHelp>();
             if (_ziphelper.FileExists(ProjectFolder + "hOmSave7" + _DirSeperator + "s7hkdmax" + _DirSeperator + "HOBJECT1.DBF"))
             {
@@ -1324,9 +1536,14 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             //    if (parent != null) parent.SubModul = cp;
             //}
 
+            // ===== SECTION 20: Parse Network Configuration =====
+            // Parse S7Netze/S7NONFGX.tab for detailed network interface configurations
+            // Extracts IP addresses, MAC addresses, subnet masks, router settings
+            // Processes Ethernet, Profibus DP, and MPI interface parameters
+            // Uses binary pattern matching to locate configuration structures
             try
             {
-                //read IP address from S7Netze\S7NONFGX.tab
+                // Read Ethernet interface configuration
                 if (_ziphelper.FileExists(ProjectFolder + "S7Netze" + _DirSeperator + "S7NONFGX.tab"))
                 {
                     Stream hrsLink = _ziphelper.GetReadStream(ProjectFolder + "S7Netze" + _DirSeperator + "S7NONFGX.tab");
@@ -1336,6 +1553,12 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
                     rd.Close();
                     hrsLink.Close();
 
+                    // Network configuration binary structure:
+                    // - Starts with 0x03,0x52,0x14,0x00 + 4-byte object ID
+                    // - Contains attribute blocks: IP (0xE0,0x0F...), MAC (0xA2,0x0F...), Mask (0xE5,0x0F...), Router (0xE3,0x0F...)
+                    // - Each attribute: 8-byte header + 1-byte length + variable hex-encoded data
+                    // - Structure length ~1705 bytes per Ethernet interface
+                    // - IP addresses stored as hex strings (e.g., "C0A80001" = 192.168.0.1)
                     char[] searchValid = { 'A', 'd', 'd', 'r', 'e', 's', 's', 'I', 's', 'V', 'a', 'l', 'i', 'd' };
                     byte[] searchName = { (byte)'B', (byte)'a', (byte)'u', (byte)'g', (byte)'r', (byte)'u', (byte)'p', (byte)'p', (byte)'e', (byte)'n', (byte)'n', (byte)'a', (byte)'m', (byte)'e' };
 
@@ -1591,7 +1814,10 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             {
                 Console.WriteLine("14 Step7ProjectV5.cs threw exception");
             }
-            //union SubModul Cp
+
+            // ===== SECTION 21: Merge Sub-Module Network Interfaces =====
+            // Consolidate network interfaces from CP sub-modules into parent CP
+            // Some CPs have separate interface modules that must be merged
             bool repeat;
             do
             {
@@ -1612,6 +1838,19 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             } while (repeat);
         }
 
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Searches for a byte pattern within a byte array, with maximum search length limit.
+        /// Used extensively for binary file parsing to locate configuration structures.
+        /// </summary>
+        /// <param name="array">Byte array to search within</param>
+        /// <param name="pattern">Byte pattern to find</param>
+        /// <param name="offset">Starting position for search</param>
+        /// <param name="maxLen">Maximum number of bytes to search from offset</param>
+        /// <returns>Zero-based index of first match, or -1 if not found</returns>
         private int indexOfByteArray(byte[] array, byte[] pattern, int offset, int maxLen)
         {
             int success = 0;
@@ -1633,10 +1872,15 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             return -1;
         }
 
+        /// <summary>
+        /// Retrieves the symbol table associated with a program folder.
+        /// Symbol tables map symbolic variable names to PLC memory addresses.
+        /// </summary>
+        /// <param name="myBlockFolder">Program folder to get symbol table for</param>
+        /// <param name="showDeleted">If true, includes deleted symbol tables</param>
+        /// <returns>SymbolTable object, or null if no symbol table exists for this program</returns>
         private SymbolTable _GetSymTabForProject(S7ProgrammFolder myBlockFolder, bool showDeleted)
         {
-            //string tmpId1 = "";
-
             var retVal = new SymbolTable() { Project = this };
 
             int tmpId2 = 0;
@@ -1697,30 +1941,74 @@ namespace DotNetSiemensPLCToolBoxLibrary.Projectfiles
             return retVal;
         }
 
+        #endregion
+
+        #region Helper Classes
+
+        /// <summary>
+        /// Helper class to store relationship data from HRELATI1.DBF files.
+        /// HRELATI1 tables define parent-child relationships between hardware objects.
+        /// Field names match the DBF column names for direct mapping.
+        /// </summary>
         private class LinkHelp
         {
+            /// <summary>Source object ID</summary>
             public int SOBJID { get; set; }
+
+            /// <summary>Source object type</summary>
             public int SOBJTYP { get; set; }
+
+            /// <summary>Relationship type identifier</summary>
             public int RELID { get; set; }
+
+            /// <summary>Target object ID</summary>
             public int TOBJID { get; set; }
+
+            /// <summary>Target object type</summary>
             public int TOBJTYP { get; set; }
+
+            /// <summary>Target unit ID</summary>
             public int TUNITID { get; set; }
+
+            /// <summary>Target unit type</summary>
             public int TUNITTYP { get; set; }
         }
 
+        /// <summary>
+        /// Helper class to store attribute data from HATTRME1.DBF files.
+        /// HATTRME tables contain extended attributes for hardware objects (e.g., Profinet device names).
+        /// </summary>
         private class AttrMeHelp
         {
+            /// <summary>Object ID this attribute belongs to</summary>
             public int IDM { get; set; }
+
+            /// <summary>Attribute type identifier</summary>
             public int ATTRIIDM { get; set; }
+
+            /// <summary>Attribute data format</summary>
             public int ATTFORMATM { get; set; }
+
+            /// <summary>Attribute value as byte array</summary>
             public byte[] MEMOARRAYM { get; set; }
         }
 
+        /// <summary>
+        /// Helper class to temporarily store Profibus DP interface mappings during parsing.
+        /// Links DP interface IDs to their addresses and parent objects.
+        /// </summary>
         private class DpHelp
         {
+            /// <summary>DP interface object ID</summary>
             public int id;
+
+            /// <summary>DP bus address</summary>
             public int addr;
+
+            /// <summary>Target object ID (network reference)</summary>
             public int TobjID;
         }
+
+        #endregion
     }
 }

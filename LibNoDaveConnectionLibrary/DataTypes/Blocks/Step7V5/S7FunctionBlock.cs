@@ -209,8 +209,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DataTypes.Blocks.Step7V5
                                     continue;
                                 try
                                 {
-                                    string depSymbol = "\"" + SymbolTable.GetEntryFromOperand(dependency).Symbol + "\"";
-                                    vars = vars.Replace(dependency, SymbolTable.GetEntryFromOperand(dependency).Symbol);
+                                    //string depSymbol = "\"" + SymbolTable.GetEntryFromOperand(dependency).Symbol + "\"";
+                                    //vars = vars.Replace(dependency, SymbolTable.GetEntryFromOperand(dependency).Symbol);
                                 }
                                 catch
                                 {
