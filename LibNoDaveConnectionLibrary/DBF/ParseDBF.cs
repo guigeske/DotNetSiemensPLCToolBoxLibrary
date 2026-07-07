@@ -47,7 +47,8 @@ namespace DotNetSiemensPLCToolBoxLibrary.DBF
 
             BinaryReader br = null;
 
-            openMemoFile(dbfFile, _ziphelper, DirSeperator);
+            int memoBlockLength;
+            BinaryReader dbtReader = openMemoFile(dbfFile, _ziphelper, DirSeperator, out memoBlockLength);
 
             readMDXFile(dbfFile, _ziphelper, DirSeperator);
             //Dictionary<int, byte[]> memoLookup = ReadDBT(dbfFile);
@@ -194,7 +195,7 @@ namespace DotNetSiemensPLCToolBoxLibrary.DBF
                                 break;
 
                             case dBaseType.M: // Memo
-                                row[fieldIndex + 1] = ReadMemoBlock(dBaseConverter.N_ToInt(recReader.ReadBytes(field.fieldLen)));
+                                row[fieldIndex + 1] = ReadMemoBlock(dbtReader, memoBlockLength, dBaseConverter.N_ToInt(recReader.ReadBytes(field.fieldLen)));
                                 break;
 
                             case dBaseType.D: // Date (YYYYMMDD)
@@ -455,16 +456,17 @@ namespace DotNetSiemensPLCToolBoxLibrary.DBF
 
         #region DBT (Memo) Functions
 
-        private static int memoBlockLength = 512;
-        private static BinaryReader dbtReader = null;
-
-        private static void openMemoFile(string dbfFile, ZipHelper _ziphelper, char DirSeperator)
+        // Reader and block length are per-call state (returned/passed explicitly):
+        // shared statics here corrupted concurrent parses of different projects.
+        private static BinaryReader openMemoFile(string dbfFile, ZipHelper _ziphelper, char DirSeperator, out int memoBlockLength)
         {
+            memoBlockLength = 512;
+            BinaryReader dbtReader = null;
+
             string dbtFile = Path.GetDirectoryName(dbfFile) + DirSeperator + Path.GetFileNameWithoutExtension(dbfFile) + ".dbt";
 
             if (_ziphelper.FileExists(dbtFile))
             {
-                dbtReader = null;
                 try
                 {
                     //dbtReader = new BinaryReader(new FileStream(dbtFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
@@ -490,9 +492,11 @@ namespace DotNetSiemensPLCToolBoxLibrary.DBF
                 {
                 }
             }
+
+            return dbtReader;
         }
 
-        private static byte[] ReadMemoBlock(int recordnumber)
+        private static byte[] ReadMemoBlock(BinaryReader dbtReader, int memoBlockLength, int recordnumber)
         {
             if (recordnumber == 0 || dbtReader == null)
                 return new byte[0];
